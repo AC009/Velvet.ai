@@ -1,0 +1,1708 @@
+@import "tailwindcss";
+
+@theme {
+  --color-velvet-black: #000000;
+  --color-velvet-gold: #d4af37;
+  --color-velvet-gold-light: #f5e6a8;
+  --color-velvet-gold-dark: #8b6914;
+  --color-velvet-rose: #e8476a;
+  --color-velvet-rose-glow: #ff4d6d;
+  --color-velvet-amber: #d4a030;
+  --color-velvet-amber-glow: #ffb830;
+  --color-velvet-cyan: #00d4ff;
+  --color-velvet-cyan-glow: #5cefff;
+  --color-velvet-purple: #9b59f0;
+  --color-velvet-purple-glow: #b87dff;
+  --color-velvet-muted: #8a8a8a;
+  --color-velvet-purple-deep: #3d1263;
+  --color-velvet-purple-royal: #5b2589;
+  --color-velvet-midnight: #12111a;
+  --font-serif: var(--font-playfair), "Playfair Display", Georgia, serif;
+  --font-sans: var(--font-dm-sans), "DM Sans", system-ui, sans-serif;
+}
+
+@layer base {
+  html,
+  body {
+    @apply h-full overflow-hidden bg-black text-white antialiased;
+    font-family: var(--font-sans);
+  }
+
+  * {
+    @apply box-border;
+  }
+}
+
+@layer utilities {
+  .font-serif-display {
+    font-family: var(--font-serif);
+  }
+
+  .text-gold-gradient {
+    background: linear-gradient(
+      180deg,
+      #fff8dc 0%,
+      #f5e6a8 25%,
+      #d4af37 55%,
+      #a67c00 85%,
+      #8b6914 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .text-gold-gradient-horizontal {
+    background: linear-gradient(
+      90deg,
+      #8b6914 0%,
+      #d4af37 35%,
+      #f5e6a8 55%,
+      #d4af37 75%,
+      #8b6914 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .btn-gold-gradient {
+    background: linear-gradient(
+      90deg,
+      #8b6914 0%,
+      #c9a227 25%,
+      #f5e6a8 50%,
+      #c9a227 75%,
+      #8b6914 100%
+    );
+    box-shadow:
+      0 4px 24px rgba(212, 175, 55, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  }
+
+  .splash-fade-out {
+    animation: splashFadeOut 0.8s ease-in-out forwards;
+  }
+
+  .phase-enter {
+    animation: phaseEnter 0.6s ease-out forwards;
+  }
+
+  .typewriter-cursor::after {
+    content: "▍";
+    animation: blink 0.9s step-end infinite;
+    color: #d4af37;
+    margin-left: 1px;
+  }
+
+  .chat-enter {
+    animation: chatSlideEnter 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .text-romance-crimson {
+    background: linear-gradient(
+      180deg,
+      #ffd0d8 0%,
+      #e8476a 40%,
+      #c9184a 70%,
+      #8b1538 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 18px rgba(232, 71, 106, 0.35));
+  }
+
+  .stardust {
+    background-image: radial-gradient(
+      1px 1px at 20% 30%,
+      rgba(212, 175, 55, 0.4) 0%,
+      transparent 100%
+    );
+  }
+
+  .typing-dot {
+    animation: typingBounce 1.2s ease-in-out infinite;
+  }
+
+  .typing-dot:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  .typing-dot:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  .suggestions-fade-in {
+    opacity: 0;
+    animation: suggestionsFadeIn 0.55s ease-out forwards;
+  }
+
+  .animate-fade-in {
+    animation: fadeInUp 0.45s ease-out forwards;
+  }
+
+  .kinetic-enter {
+    opacity: 0;
+    will-change: transform, opacity;
+    animation: kineticSkewEnter 400ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .typing-pulse-glow {
+    animation: typingPulseGlowPurple 1.6s ease-in-out infinite;
+  }
+
+  .typing-pulse-glow-gold {
+    animation: typingPulseGlow 1.6s ease-in-out infinite;
+  }
+
+  .purple-vignette {
+    background: radial-gradient(
+      ellipse 75% 60% at 50% 38%,
+      rgba(91, 37, 137, 0.42) 0%,
+      rgba(45, 18, 80, 0.28) 35%,
+      rgba(0, 0, 0, 0.88) 72%,
+      #000000 100%
+    );
+  }
+
+  .ambient-scene-layer {
+    mix-blend-mode: screen;
+    opacity: 0.28;
+    filter: blur(2px);
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+  }
+
+  .ambient-ken-burns {
+    animation: kenBurnsPan 40s ease-in-out infinite alternate;
+  }
+
+  .ambient-color-dodge-overlay {
+    mix-blend-mode: color-dodge;
+    opacity: 0.35;
+    background: radial-gradient(
+      ellipse 80% 60% at 50% 40%,
+      rgba(155, 89, 240, 0.45) 0%,
+      rgba(212, 175, 55, 0.2) 40%,
+      transparent 70%
+    );
+    will-change: opacity, transform;
+    transform: translate3d(0, 0, 0);
+    animation: ambientDodgePulse 12s ease-in-out infinite alternate;
+  }
+
+  .rain-particle-matrix {
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .rain-streak {
+    position: absolute;
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgba(192, 132, 252, 0.2),
+      transparent
+    );
+    opacity: 0.12;
+    transform: rotate(45deg);
+    will-change: transform, opacity;
+    animation: rainFall linear infinite;
+  }
+
+  .tech-chassis-inner {
+    background: linear-gradient(
+      to bottom right,
+      #0f0e17 0%,
+      #08070d 50%,
+      #040406 100%
+    );
+    clip-path: polygon(
+      0 0,
+      calc(100% - 14px) 0,
+      100% 14px,
+      100% 100%,
+      14px 100%,
+      0 calc(100% - 14px)
+    );
+  }
+
+  .user-chassis-gradient {
+    clip-path: polygon(
+      14px 0,
+      100% 0,
+      100% calc(100% - 14px),
+      calc(100% - 14px) 100%,
+      0 100%,
+      0 14px
+    );
+    background: linear-gradient(to right, #501f7a 0%, #2e0b4e 100%);
+    box-shadow: 0 4px 24px rgba(80, 31, 122, 0.45);
+  }
+
+  .memory-system-node {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(155, 89, 240, 0.12) 20%,
+      rgba(155, 89, 240, 0.18) 50%,
+      rgba(155, 89, 240, 0.12) 80%,
+      transparent 100%
+    );
+    animation: memoryRadarGlow 7s ease-in-out infinite;
+  }
+
+  .memory-radar-beam {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgba(212, 175, 55, 0.5),
+      transparent
+    );
+    animation: memoryRadarSweep 7s linear infinite;
+    will-change: left;
+  }
+
+  .utility-pill {
+    background: rgba(18, 17, 26, 0.8);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    backdrop-filter: blur(8px);
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+  }
+
+  .utility-react-spring {
+    animation: reactSpringPress 180ms cubic-bezier(0.175, 0.885, 0.32, 1.275)
+      forwards;
+  }
+
+  .floating-reaction-token {
+    position: absolute;
+    pointer-events: none;
+    white-space: nowrap;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(184, 125, 255, 0.95);
+    text-shadow: 0 0 8px rgba(191, 119, 255, 0.6);
+    animation: floatUpFade 900ms ease-out forwards;
+    will-change: transform, opacity;
+  }
+
+  .memory-scanner-sheet {
+    animation: memorySheetSlide 380ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    transform-origin: top center;
+  }
+
+  .typewriter-row {
+    overflow: hidden;
+    white-space: nowrap;
+    border-left: 2px solid rgba(212, 175, 55, 0.35);
+    padding-left: 8px;
+  }
+
+  .auth-aurora-pan {
+    background:
+      radial-gradient(ellipse 95% 75% at 50% 42%, rgba(46, 16, 101, 0.42) 0%, rgba(30, 16, 80, 0.22) 38%, transparent 72%),
+      radial-gradient(ellipse 60% 50% at 20% 80%, rgba(76, 29, 149, 0.18) 0%, transparent 55%),
+      radial-gradient(ellipse 55% 45% at 80% 20%, rgba(49, 46, 129, 0.14) 0%, transparent 50%);
+    animation: authAuroraPan 18s ease-in-out infinite alternate;
+    will-change: transform, opacity;
+  }
+
+  .cinematic-cosmos-static {
+    background:
+      radial-gradient(ellipse 70% 55% at 50% 50%, rgba(46, 16, 101, 0.12) 0%, transparent 68%);
+  }
+
+  .launch-logo-neon-aura-outer {
+    background:
+      radial-gradient(circle, rgba(46, 16, 101, 0.28) 0%, rgba(76, 29, 149, 0.1) 45%, transparent 72%);
+    filter: blur(64px);
+  }
+
+  .launch-logo-neon-aura {
+    background:
+      radial-gradient(
+        circle,
+        rgba(168, 85, 247, 0.48) 0%,
+        rgba(109, 40, 217, 0.22) 35%,
+        rgba(76, 29, 149, 0.14) 55%,
+        transparent 75%
+      );
+    filter: blur(56px);
+    animation: logoAuraBreathe 4s ease-in-out 1500ms infinite alternate;
+  }
+
+  .launch-splash-exit {
+    animation: launchSplashExit 600ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    pointer-events: none;
+  }
+
+  .auth-glass-button {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    transition: border-color 200ms ease, background 200ms ease, transform 150ms ease;
+  }
+
+  .auth-glass-button:hover {
+    border-color: rgba(168, 85, 247, 0.45);
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .auth-glass-button-dark {
+    background: rgba(24, 24, 27, 0.4);
+  }
+
+  .auth-glass-button-dark:hover {
+    background: rgba(24, 24, 27, 0.55);
+  }
+
+  .auth-gate-exit {
+    animation: authGateExit 600ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .auth-scan-pulse {
+    animation: authScanPulse 1.4s ease-in-out infinite;
+  }
+
+  .auth-gate-enter {
+    animation: authGateEnter 600ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .auth-login-block-enter {
+    animation: authLoginBlockEnter 1000ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    will-change: opacity, transform;
+  }
+
+  .world-cinema-title {
+    background: linear-gradient(180deg, #fde047 0%, #eab308 50%, #ca8a04 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 2px 12px rgba(234, 179, 8, 0.35));
+  }
+
+  .world-portal-card {
+    border-width: 1px;
+    border-style: solid;
+    will-change: box-shadow, border-color;
+    transition:
+      box-shadow 300ms ease,
+      border-color 300ms ease,
+      transform 150ms ease;
+  }
+
+  .world-portal-card--selected {
+    animation: worldPortalBorderFlash 300ms ease-out;
+  }
+
+  .world-portal-aura {
+    filter: blur(8px);
+  }
+
+  .world-portal-glass {
+    background: rgba(10, 8, 16, 0.45);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .world-portal-pulse {
+    animation: worldPortalInnerPulse 2s ease-in-out infinite;
+    box-shadow: inset 0 0 20px var(--portal-pulse-color, rgba(139, 92, 246, 0.3));
+  }
+
+  .world-continue-trigger {
+    background: linear-gradient(135deg, #fde047 0%, #eab308 45%, #ca8a04 100%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow:
+      0 8px 24px rgba(234, 179, 8, 0.28),
+      0 2px 8px rgba(0, 0, 0, 0.25);
+    transition:
+      transform 150ms ease,
+      box-shadow 200ms ease,
+      opacity 200ms ease;
+  }
+
+  .world-continue-trigger:not(:disabled):hover {
+    box-shadow:
+      0 10px 28px rgba(234, 179, 8, 0.34),
+      0 2px 10px rgba(0, 0, 0, 0.3);
+  }
+
+  .world-continue-trigger:not(:disabled):active {
+    transform: scale(0.98);
+  }
+
+  .auth-app-exit {
+    animation: authAppExit 600ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    will-change: transform, opacity;
+  }
+
+  .launch-luxury-logo {
+    animation: launchLuxuryEnter 1500ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    will-change: opacity, transform;
+  }
+
+  .dashboard-instant-mount {
+    animation: dashboardInstantMount 150ms ease-out forwards;
+  }
+
+  .audit-checkmarks {
+    animation: auditCheckSlide 250ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    color: #bf77ff;
+    text-shadow: 0 0 8px #bf77ff;
+  }
+
+  .input-composer-shell {
+    will-change: transform, opacity;
+    transform: translate3d(0, 0, 0);
+    transition:
+      transform 350ms cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .input-composer-shell-exit {
+    transform: translate3d(0, 120%, 0);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .choice-hub-shell {
+    position: absolute;
+    inset: 0;
+    will-change: transform, opacity;
+    transform: translate3d(0, 100%, 0);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      opacity 280ms ease-out;
+  }
+
+  .choice-hub-shell-enter {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .choice-hub-in-feed {
+    position: relative;
+    inset: auto;
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+    will-change: auto;
+  }
+
+  .choice-capsule-interactive {
+    will-change: transform, box-shadow;
+    transform: translate3d(0, 0, 0);
+    transition:
+      transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 180ms ease-out,
+      border-color 180ms ease-out;
+  }
+
+  .choice-capsule-interactive:hover:not(:disabled),
+  .choice-capsule-interactive:active:not(:disabled) {
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.35);
+    transform: translate3d(0, -2px, 0) scale(1.01);
+  }
+
+  .choice-capsule-interactive:active:not(:disabled) {
+    transform: translate3d(0, 0, 0) scale(0.98);
+  }
+
+  .online-pulse-dot {
+    animation: onlinePulse 2s ease-in-out infinite;
+  }
+
+  .send-purple-glow {
+    background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+    box-shadow: 0 0 16px rgba(124, 58, 237, 0.45);
+  }
+
+  .tech-chassis-wrap {
+    background: linear-gradient(
+      135deg,
+      #d4af37 0%,
+      rgba(168, 85, 247, 0.15) 50%,
+      transparent 100%
+    );
+    clip-path: polygon(
+      0 0,
+      calc(100% - 14px) 0,
+      100% 14px,
+      100% 100%,
+      14px 100%,
+      0 calc(100% - 14px)
+    );
+    padding: 1px;
+  }
+
+  .viewport-vignette {
+    background: radial-gradient(
+      ellipse 70% 65% at 50% 42%,
+      transparent 0%,
+      rgba(0, 0, 0, 0.55) 50%,
+      rgba(0, 0, 0, 0.97) 100%
+    );
+  }
+
+  .user-chassis {
+    clip-path: polygon(
+      14px 0,
+      100% 0,
+      100% calc(100% - 14px),
+      calc(100% - 14px) 100%,
+      0 100%,
+      0 14px
+    );
+  }
+
+  .typing-dot-bounce {
+    animation: bounce 1s infinite;
+  }
+
+  .typing-dot-bounce:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  .typing-dot-bounce:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  .cinema-vignette {
+    background: radial-gradient(
+      ellipse 85% 75% at 50% 45%,
+      transparent 0%,
+      rgba(0, 0, 0, 0.35) 55%,
+      rgba(0, 0, 0, 0.92) 100%
+    );
+  }
+
+  .media-reveal {
+    animation: fadeInUp 0.45s ease-out forwards;
+  }
+
+  .media-reveal-image {
+    filter: blur(24px);
+    transform: scale(0.96) translate3d(0, 0, 0);
+    transition:
+      filter 1600ms cubic-bezier(0.25, 1, 0.5, 1),
+      transform 1600ms cubic-bezier(0.25, 1, 0.5, 1);
+    will-change: filter, transform;
+    backface-visibility: hidden;
+  }
+
+  .media-reveal-image.revealed {
+    filter: blur(0);
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+
+  .cinema-shimmer-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(212, 175, 55, 0.18),
+      transparent
+    );
+    transform: translateX(-100%);
+    will-change: transform;
+  }
+
+  .cinema-shimmer-overlay.active {
+    animation: shimmerSweep 1600ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+
+  .cinema-reveal-container {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .waveform-bar-idle {
+    background-color: rgba(212, 175, 55, 0.3);
+  }
+
+  .waveform-bar-active {
+    background-color: #d4af37;
+    animation: waveformPulse 0.75s ease-in-out infinite alternate;
+  }
+
+  .tab-crossfade {
+    animation: spatialTabSurge 550ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .spatial-tab-viewport {
+    perspective: 1200px;
+    perspective-origin: 50% 50%;
+    transform-style: preserve-3d;
+  }
+
+  .spatial-tab-layer {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+    will-change: transform, opacity, filter;
+    transition:
+      transform 550ms cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 550ms cubic-bezier(0.16, 1, 0.3, 1),
+      filter 550ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .spatial-tab-character-front {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+    filter: blur(0);
+    z-index: 20;
+    pointer-events: auto;
+  }
+
+  .spatial-tab-character-recede {
+    transform: translate3d(0, 0, -120px) scale(0.95);
+    opacity: 0.15;
+    filter: blur(12px);
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  .spatial-tab-surface-active {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+    filter: blur(0);
+    z-index: 30;
+    pointer-events: auto;
+  }
+
+  .spatial-tab-surface-idle {
+    transform: translate3d(0, 40px, 0) scale(1.02);
+    opacity: 0;
+    filter: blur(8px);
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .spatial-tab-scroll {
+    height: 100%;
+    min-height: 0;
+    width: 100%;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    will-change: transform;
+    transform: translateZ(0);
+    padding-bottom: 9rem;
+  }
+
+  .velvet-mobile-scroll {
+    min-height: 0;
+    width: 100%;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .velvet-mobile-scroll-glass {
+    min-height: 0;
+    width: 100%;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    will-change: transform;
+    transform: translateZ(0);
+  }
+
+  .nav-golden-indicator {
+    box-shadow: 0 0 10px #d4af37;
+  }
+
+  .nav-omni-light {
+    will-change: opacity, transform;
+  }
+
+  .memory-graph-card {
+    animation: memoryCardSurge 550ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    transform-style: preserve-3d;
+    transition: transform 450ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .memory-graph-card:hover {
+    transform: perspective(900px) rotateX(2.5deg) rotateY(-3deg) translateY(-3px);
+  }
+
+  .memory-graph-shimmer {
+    background: linear-gradient(
+      105deg,
+      transparent 35%,
+      rgba(212, 175, 55, 0.12) 50%,
+      transparent 65%
+    );
+    animation: memoryBorderShimmer 2.8s linear infinite;
+  }
+
+  /* ── Narrative Highway RPG Map ─────────────────────────────────────── */
+
+  .animate-node-shake {
+    animation: nodeShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  }
+
+  .story-node-aura {
+    animation: storyNodeAura 2.2s ease-in-out infinite;
+  }
+
+  /* kept for legacy references */
+  .stories-laser-track {
+    border-left: 1px solid rgba(212, 175, 55, 0.85);
+    box-shadow:
+      -2px 0 14px rgba(212, 175, 55, 0.45),
+      -1px 0 6px rgba(212, 175, 55, 0.75);
+  }
+
+  .story-wax-seal {
+    animation: waxSealPulse 2.6s ease-in-out infinite;
+  }
+
+  .you-terminal-light {
+    color: #2a2a2e;
+  }
+
+  .you-light-panel {
+    border-width: 1px;
+  }
+
+  .theme-ripple-mask {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    pointer-events: none;
+    animation: themeRippleExpand 850ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .theme-ripple-mask-to-light {
+    background: #fafafa;
+  }
+
+  .theme-ripple-mask-to-dark {
+    background: #000000;
+  }
+
+  .nav-tab-active {
+    filter: drop-shadow(0 0 6px rgba(184, 125, 255, 0.45));
+  }
+
+  .text-shadow-purple-glow {
+    text-shadow: 0 0 8px rgba(184, 125, 255, 0.5);
+  }
+
+  .velvet-theme-light {
+    --velvet-bg: #f5f5f7;
+    --velvet-fg: #111111;
+  }
+
+  .velvet-theme-dark {
+    --velvet-bg: #000000;
+    --velvet-fg: #ffffff;
+  }
+
+  /* ── Neural Archive Terminal ────────────────────────────────────────── */
+
+  /* ── Neural Node Web (Memories tab) ─────────────────────────────────── */
+
+  .neural-tether-dash {
+    stroke-dasharray: 3 5;
+    animation: neuralTetherDash 2.4s linear infinite;
+  }
+
+  .neural-core-orbit-ring {
+    animation: neuralCoreOrbitSpin 18s linear infinite;
+    transform-origin: 50% 50%;
+  }
+
+  .neural-drift-core {
+    animation: neuralDriftCore 5.5s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .neural-drift-sat-1 {
+    animation: neuralDriftSat1 4.2s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .neural-drift-sat-2 {
+    animation: neuralDriftSat2 4.8s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .neural-drift-sat-3 {
+    animation: neuralDriftSat3 5.1s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .neural-drift-sat-4 {
+    animation: neuralDriftSat4 4.5s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .neural-readout-enter {
+    animation: neuralReadoutDrop 280ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .neural-scan-strip {
+    animation: neuralScanStripFade 300ms ease forwards;
+  }
+
+  .mind-scanner-status-badge {
+    animation: mindScannerStatusPulse 2.4s ease-in-out infinite;
+  }
+
+  .mind-scanner-ecg-pulse {
+    animation: mindScannerEcgPulse 1.6s ease-in-out infinite;
+  }
+
+  .mind-scanner-vault-starburst::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    background:
+      radial-gradient(circle at 30% 40%, rgba(212, 175, 55, 0.12) 0%, transparent 45%),
+      radial-gradient(circle at 70% 60%, rgba(250, 204, 21, 0.08) 0%, transparent 40%),
+      radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.06) 0%, transparent 55%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .mind-scanner-orbital-lock {
+    animation: mindScannerOrbitalGlow 3s ease-in-out infinite;
+  }
+
+  @keyframes mindScannerEcgPulse {
+    0%,
+    100% {
+      opacity: 0.55;
+      transform: scaleX(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scaleX(1.04);
+    }
+  }
+
+  @keyframes mindScannerOrbitalGlow {
+    0%,
+    100% {
+      box-shadow:
+        0 0 24px rgba(212, 175, 55, 0.35),
+        inset 0 0 16px rgba(212, 175, 55, 0.1);
+      transform: scale(1);
+    }
+    50% {
+      box-shadow:
+        0 0 36px rgba(250, 204, 21, 0.45),
+        inset 0 0 22px rgba(212, 175, 55, 0.18);
+      transform: scale(1.03);
+    }
+  }
+
+  @keyframes mindScannerStatusPulse {
+    0%,
+    100% {
+      opacity: 0.75;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.02);
+    }
+  }
+
+  /* ── Stories Bento Grid ─────────────────────────────────────────────── */
+
+  .bento-story-tile {
+    will-change: transform;
+    transform-style: preserve-3d;
+  }
+
+  .bento-story-tile-active {
+    animation: bentoActivePulse 3.2s ease-in-out infinite;
+  }
+
+  .bento-lens-flare {
+    background: linear-gradient(
+      110deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.06) 48%,
+      transparent 100%
+    );
+    animation: bentoLensFlare 1.15s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+
+  .bento-lens-flare-hover {
+    background: linear-gradient(
+      110deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.06) 48%,
+      transparent 100%
+    );
+    opacity: 0;
+  }
+
+  .bento-story-tile:hover .bento-lens-flare-hover {
+    opacity: 1;
+    animation: bentoLensFlare 0.85s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+
+  /* legacy card styles — kept for backward compat */
+  .neural-memory-card {
+    animation: neuralCardSurge 620ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    will-change: transform;
+    transform-style: preserve-3d;
+    transition:
+      transform 380ms cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 380ms ease;
+  }
+
+  .neural-memory-card:hover {
+    transform: perspective(800px) rotateX(1.8deg) rotateY(-2.2deg) translateY(-2px);
+  }
+
+  .neural-card-shimmer {
+    background: linear-gradient(
+      108deg,
+      transparent 20%,
+      rgba(255, 255, 255, 0.075) 48%,
+      rgba(255, 255, 255, 0.04) 52%,
+      transparent 80%
+    );
+    animation: neuralShimmerSweep 0.9s ease-out both;
+    pointer-events: none;
+  }
+}
+
+@keyframes reactParticleBurst {
+  0% {
+    transform: translateY(0) rotate(var(--rotate, 0deg)) scale(1);
+    opacity: 1;
+  }
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-110px) rotate(var(--rotate, 0deg)) scale(0.65);
+    opacity: 0;
+  }
+}
+
+@keyframes kenBurnsPan {
+  0% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  100% {
+    transform: scale(1.06) translate3d(-1.5%, -1%, 0);
+  }
+}
+
+@keyframes ambientDodgePulse {
+  0% {
+    opacity: 0.25;
+  }
+  100% {
+    opacity: 0.42;
+  }
+}
+
+@keyframes rainFall {
+  0% {
+    transform: rotate(45deg) translate3d(0, -120%, 0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.12;
+  }
+  90% {
+    opacity: 0.12;
+  }
+  100% {
+    transform: rotate(45deg) translate3d(0, 120vh, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes reactSpringPress {
+  0% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  45% {
+    transform: scale(0.93) translate3d(0, 0, 0);
+  }
+  100% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+}
+
+@keyframes floatUpFade {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, -60px, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes memorySheetSlide {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -12px, 0) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes storyDrawerSlideUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 100%, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.story-drawer-enter {
+  animation: storyDrawerSlideUp 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes memoryHookGlowPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(155, 89, 240, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(155, 89, 240, 0.55);
+  }
+}
+
+.memory-hook-glow {
+  animation: memoryHookGlowPulse 2.2s ease-in-out infinite;
+}
+
+@keyframes storyCtaShimmer {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.story-cta-animated {
+  background-size: 200% 100%;
+  animation: storyCtaShimmer 5s ease infinite;
+}
+
+@keyframes memoryRadarGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 12px rgba(212, 175, 55, 0.08);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(212, 175, 55, 0.22);
+  }
+}
+
+@keyframes memoryRadarSweep {
+  0% {
+    left: 0%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@keyframes auditCheckSlide {
+  from {
+    transform: translate3d(8px, 0, 0);
+    opacity: 0;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes shimmerSweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+@keyframes spatialTabSurge {
+  from {
+    transform: translate3d(0, 40px, 0) scale(1.02);
+    filter: blur(8px);
+    opacity: 0;
+  }
+  to {
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+    opacity: 1;
+  }
+}
+
+@keyframes memoryCardSurge {
+  from {
+    transform: translate3d(0, 24px, 0) scale(0.98);
+    opacity: 0;
+    filter: blur(4px);
+  }
+  to {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes memoryBorderShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes waxSealPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.35);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 18px rgba(212, 175, 55, 0.55);
+  }
+}
+
+@keyframes themeRippleExpand {
+  from {
+    clip-path: circle(0% at var(--ripple-x) var(--ripple-y));
+    opacity: 0.95;
+  }
+  to {
+    clip-path: circle(150vmax at var(--ripple-x) var(--ripple-y));
+    opacity: 1;
+  }
+}
+
+@keyframes tabCrossfade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes kineticSkewEnter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0) skewY(1deg);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) skewY(0deg);
+  }
+}
+
+@keyframes typingPulseGlowPurple {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(155, 89, 240, 0.12);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(155, 89, 240, 0.32);
+  }
+}
+
+@keyframes onlinePulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5);
+  }
+  50% {
+    opacity: 0.85;
+    box-shadow: 0 0 0 4px rgba(74, 222, 128, 0);
+  }
+}
+
+@keyframes typingPulseGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(212, 175, 55, 0.08);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(212, 175, 55, 0.22);
+  }
+}
+
+@keyframes waveformPulse {
+  from {
+    transform: scaleY(0.55);
+    opacity: 0.65;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes splashFadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.02);
+    pointer-events: none;
+  }
+}
+
+@keyframes phaseEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes chatSlideEnter {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes typingBounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  30% {
+    transform: translateY(-5px);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes suggestionsFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes nodeShake {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  15% {
+    transform: translateX(-7px) rotate(-1deg);
+  }
+  30% {
+    transform: translateX(6px) rotate(1deg);
+  }
+  48% {
+    transform: translateX(-5px);
+  }
+  62% {
+    transform: translateX(4px) rotate(-0.4deg);
+  }
+  80% {
+    transform: translateX(-2px);
+  }
+}
+
+@keyframes storyNodeAura {
+  0%,
+  100% {
+    opacity: 0.22;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.62;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes neuralTetherDash {
+  0% {
+    stroke-dashoffset: 0;
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.85;
+  }
+  100% {
+    stroke-dashoffset: -16;
+    opacity: 0.45;
+  }
+}
+
+@keyframes neuralCoreOrbitSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes neuralDriftCore {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate(-50%, -50%) translate3d(0, -8px, 0);
+  }
+}
+
+@keyframes neuralDriftSat1 {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate(-50%, -50%) translate3d(0, 6px, 0);
+  }
+}
+
+@keyframes neuralDriftSat2 {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translate3d(0, -4px, 0);
+  }
+  50% {
+    transform: translate(-50%, -50%) translate3d(0, 5px, 0);
+  }
+}
+
+@keyframes neuralDriftSat3 {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translate3d(0, 5px, 0);
+  }
+  50% {
+    transform: translate(-50%, -50%) translate3d(0, -6px, 0);
+  }
+}
+
+@keyframes neuralDriftSat4 {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translate3d(0, -5px, 0);
+  }
+  50% {
+    transform: translate(-50%, -50%) translate3d(0, 7px, 0);
+  }
+}
+
+@keyframes neuralReadoutDrop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes neuralScanStripFade {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scaleX(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scaleX(1);
+  }
+}
+
+@keyframes bentoActivePulse {
+  0%,
+  100% {
+    box-shadow: 0 0 35px rgba(168, 85, 247, 0.18);
+  }
+  50% {
+    box-shadow: 0 0 48px rgba(168, 85, 247, 0.28);
+  }
+}
+
+@keyframes bentoLensFlare {
+  from {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  to {
+    transform: translateX(220%);
+    opacity: 0;
+  }
+}
+
+@keyframes neuralParticleDrift {
+  0%,
+  100% {
+    transform: translateY(0px) scale(1);
+    opacity: 0.28;
+  }
+  33% {
+    transform: translateY(-14px) scale(1.15);
+    opacity: 0.72;
+  }
+  66% {
+    transform: translateY(-8px) scale(0.9);
+    opacity: 0.42;
+  }
+}
+
+@keyframes neuralShimmerSweep {
+  0% {
+    transform: translateX(-160%);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(260%);
+    opacity: 0;
+  }
+}
+
+@keyframes neuralCardSurge {
+  from {
+    transform: translate3d(0, 28px, 0) scale(0.97);
+    opacity: 0;
+    filter: blur(5px);
+  }
+  to {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes logoAuraBreathe {
+  0% {
+    opacity: 0.88;
+    transform: scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes authAuroraPan {
+  0% {
+    transform: scale(1) translate3d(0, 0, 0);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.06) translate3d(1.5%, -1%, 0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.03) translate3d(-1%, 1.5%, 0);
+    opacity: 0.9;
+  }
+}
+
+@keyframes authGateExit {
+  from {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  to {
+    transform: translate3d(0, -100%, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes authGateEnter {
+  from {
+    transform: translate3d(0, 24px, 0);
+    opacity: 0;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes authLoginBlockEnter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 15px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes authAppExit {
+  from {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  to {
+    transform: translate3d(0, 16px, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes launchLuxuryEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes launchSplashExit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes worldPortalInnerPulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    box-shadow: inset 0 0 14px var(--portal-pulse-color, rgba(139, 92, 246, 0.25));
+  }
+  50% {
+    opacity: 0.65;
+    box-shadow: inset 0 0 24px var(--portal-pulse-color, rgba(139, 92, 246, 0.45));
+  }
+}
+
+@keyframes worldPortalBorderFlash {
+  0% {
+    filter: brightness(1.4);
+  }
+  100% {
+    filter: brightness(1);
+  }
+}
+
+@keyframes dashboardInstantMount {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes authScanPulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    text-shadow: 0 0 12px rgba(212, 175, 55, 0.25);
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 22px rgba(212, 175, 55, 0.55);
+  }
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
