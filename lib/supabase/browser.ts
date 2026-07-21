@@ -4,7 +4,16 @@ import {
   type SupabaseClient,
   type User,
 } from "@supabase/supabase-js";
-import { getPublicEnv } from "@/lib/env";
+import { normalizeSupabaseUrl } from "@/lib/supabase/normalize-url";
+
+declare global {
+  interface Window {
+    __VELVET_PUBLIC_ENV__?: {
+      supabaseUrl?: string;
+      supabaseAnonKey?: string;
+    };
+  }
+}
 
 let browserClient: SupabaseClient | null = null;
 
@@ -86,6 +95,67 @@ function toSessionFromStoredPayload(
   };
 }
 
+function readMetaContent(name: string): string {
+  if (typeof document === "undefined") {
+    return "";
+  }
+
+  const element = document.querySelector(`meta[name="${name}"]`);
+  return element?.getAttribute("content")?.trim() ?? "";
+}
+
+function readGlobalSupabaseCredentials(): {
+  supabaseUrl: string;
+  supabaseAnonKey: string;
+} {
+  const runtimeEnv =
+    typeof window !== "undefined" ? window.__VELVET_PUBLIC_ENV__ : undefined;
+
+  return {
+    supabaseUrl: normalizeSupabaseUrl(
+      runtimeEnv?.supabaseUrl?.trim() ||
+        readMetaContent("velvet:supabase-url") ||
+        "",
+    ),
+    supabaseAnonKey:
+      runtimeEnv?.supabaseAnonKey?.trim() ||
+      readMetaContent("velvet:supabase-anon-key") ||
+      "",
+  };
+}
+
+function resolveSupabaseBrowserCredentials(): {
+  supabaseUrl: string;
+  supabaseAnonKey: string;
+} {
+  let supabaseUrl = normalizeSupabaseUrl(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+  );
+  let supabaseAnonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "").trim();
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn(
+      "Supabase environment tokens are missing from process.env, verifying global fallbacks...",
+    );
+
+    const fallback = readGlobalSupabaseCredentials();
+    if (!supabaseUrl && fallback.supabaseUrl) {
+      supabaseUrl = fallback.supabaseUrl;
+    }
+    if (!supabaseAnonKey && fallback.supabaseAnonKey) {
+      supabaseAnonKey = fallback.supabaseAnonKey;
+    }
+  }
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn(
+      "[velvet/supabase] Supabase credentials are still unavailable after global fallback checks.",
+    );
+  }
+
+  return { supabaseUrl, supabaseAnonKey };
+}
+
 /** Synchronous probe — true when Supabase auth token exists in localStorage. */
 export function peekPersistedAuthMarker(): boolean {
   return findPersistedAuthStorageKey() !== null;
@@ -116,12 +186,7 @@ export function getSupabaseBrowser(): SupabaseClient {
     return browserClient;
   }
 
-  const { supabaseUrl, supabaseAnonKey } = getPublicEnv();
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-      "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY.",
-    );
-  }
+  const { supabaseUrl, supabaseAnonKey } = resolveSupabaseBrowserCredentials();
 
   browserClient = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
