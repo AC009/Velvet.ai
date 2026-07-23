@@ -1,5 +1,6 @@
 /**
  * POST /api/quest/recruit — Register active questmaster + gamified RPG session.
+ * Always UPSERTs user_quest_profiles (insert when missing) with affinity defaults.
  */
 import { recruitActiveQuestmaster } from "@/lib/chat/rpg-session-store";
 import { isValidUuid, jsonError } from "@/lib/chat/sse";
@@ -63,8 +64,21 @@ function parseBody(raw: unknown): RecruitRequestBody {
 
 export async function POST(request: Request): Promise<Response> {
   try {
-    const raw = await request.json();
+    let raw: unknown;
+    try {
+      raw = await request.json();
+    } catch {
+      return jsonError("Request body must be valid JSON.", 400);
+    }
+
     const body = parseBody(raw);
+
+    console.info("[velvet/quest/recruit] recruiting", {
+      userId: body.userId,
+      worldId: body.worldId,
+      characterId: body.characterId,
+      questLineId: body.questLineId ?? null,
+    });
 
     const result = await recruitActiveQuestmaster({
       userId: body.userId,
@@ -86,7 +100,9 @@ export async function POST(request: Request): Promise<Response> {
     const message =
       error instanceof Error ? error.message : "Questmaster recruitment failed.";
     console.error("[velvet/quest/recruit] request failed:", error);
-    return jsonError(message, 400);
+    const status =
+      message.includes("must be") || message.includes("JSON") ? 400 : 500;
+    return jsonError(message, status);
   }
 }
 

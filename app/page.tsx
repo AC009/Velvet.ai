@@ -1303,26 +1303,35 @@ function CharacterScreenHeader({
 function DashboardCharacterTile({
   character,
   onSelect,
+  disabled = false,
+  isRecruiting = false,
 }: {
   character: StoryCharacter;
   onSelect: () => void;
+  disabled?: boolean;
+  isRecruiting?: boolean;
 }): ReactNode {
   const { theme } = character;
 
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={() => {
+        if (disabled) {
+          return;
+        }
         triggerHapticFeedback(12);
         onSelect();
       }}
-      className="group relative flex h-auto min-h-[110px] w-full flex-col justify-between rounded-2xl border bg-zinc-950/45 p-4 text-left backdrop-blur-md transition-all duration-300 active:scale-[0.97]"
+      className="group relative flex h-auto min-h-[110px] w-full flex-col justify-between rounded-2xl border bg-zinc-950/45 p-4 text-left backdrop-blur-md transition-all duration-300 active:scale-[0.97] disabled:cursor-wait disabled:opacity-55"
       style={{
         borderColor: theme.border,
         borderWidth: 1,
         boxShadow: `0 0 28px ${softenThemeGlow(theme.glow)}`,
       }}
       aria-label={`Choose questmaster ${character.name}`}
+      aria-busy={isRecruiting}
     >
       <span
         className="pointer-events-none absolute left-0 top-1/2 h-[160%] w-[55%] -translate-y-1/2 rounded-full opacity-20 blur-3xl"
@@ -1347,7 +1356,7 @@ function DashboardCharacterTile({
         className="relative z-[1] mt-auto block pt-2 text-[11px] font-bold uppercase tracking-widest transition-colors group-hover:brightness-110"
         style={{ color: theme.text }}
       >
-        {QUESTMASTER_RECRUIT_CTA}
+        {isRecruiting ? "SYNCING QUESTMASTER…" : QUESTMASTER_RECRUIT_CTA}
       </span>
     </button>
   );
@@ -1364,6 +1373,8 @@ function ExecutiveNarrativeDashboard({
   userId,
   trust,
   instantMount,
+  isRecruitingQuestmaster = false,
+  recruitError = null,
   onSelectLobbyWorld,
   onContinueFromLobby,
   onSelectLobbyCharacter,
@@ -1382,6 +1393,8 @@ function ExecutiveNarrativeDashboard({
   userId: string | null;
   trust: number;
   instantMount: boolean;
+  isRecruitingQuestmaster?: boolean;
+  recruitError?: string | null;
   onSelectLobbyWorld: (worldId: number) => void;
   onContinueFromLobby: () => void;
   onSelectLobbyCharacter: (characterId: number, worldId: number) => void;
@@ -1484,11 +1497,26 @@ function ExecutiveNarrativeDashboard({
           style={VIEWPORT_SCROLL_TOUCH_STYLE}
         >
           <CharacterScreenHeader worldName={selectedWorld.name} onBack={onBackToGenres} />
+          {recruitError && (
+            <div
+              className="mt-3 rounded-xl border border-[#e8476a]/45 bg-[#e8476a]/10 px-3 py-2.5 text-[12px] leading-relaxed text-[#ffd0da]"
+              role="alert"
+            >
+              {recruitError}
+            </div>
+          )}
+          {isRecruitingQuestmaster && (
+            <p className="mt-3 text-center text-[11px] uppercase tracking-[0.2em] text-[#b87dff]">
+              Linking quest profile…
+            </p>
+          )}
           <div className="mt-4 flex w-full flex-col gap-4">
             {worldCharacters.map((character) => (
               <DashboardCharacterTile
                 key={character.id}
                 character={character}
+                disabled={isRecruitingQuestmaster}
+                isRecruiting={isRecruitingQuestmaster}
                 onSelect={() =>
                   onSelectLobbyCharacter(character.id, selectedWorld.id)
                 }
@@ -4936,21 +4964,53 @@ export default function HomePage(): ReactNode {
   }, [selectedWorldId]);
 
   const isRecruitingQuestmasterRef = useRef(false);
+  const [isRecruitingQuestmaster, setIsRecruitingQuestmaster] = useState(false);
+  const [recruitError, setRecruitError] = useState<string | null>(null);
 
   const handleSelectLobbyCharacter = useCallback(
     async (characterId: number, worldId: number): Promise<void> => {
-      if (!userId || isRecruitingQuestmasterRef.current) {
+      if (isRecruitingQuestmasterRef.current) {
+        console.warn("[velvet/recruit] ignored click — recruitment already in flight");
+        return;
+      }
+
+      let resolvedUserId = userId;
+      if (!resolvedUserId) {
+        try {
+          const { data } = await getSupabaseBrowser().auth.getSession();
+          resolvedUserId = data.session?.user?.id ?? null;
+        } catch (error) {
+          console.warn("[velvet/recruit] session lookup failed:", error);
+        }
+      }
+
+      if (!resolvedUserId) {
+        const message =
+          "Session missing — sign in again before choosing a questmaster.";
+        console.error("[velvet/recruit]", message, { characterId, worldId });
+        setRecruitError(message);
+        setErrorMessage(message);
+        if (typeof window !== "undefined") {
+          window.alert(message);
+        }
         return;
       }
 
       isRecruitingQuestmasterRef.current = true;
+      setIsRecruitingQuestmaster(true);
+      setRecruitError(null);
       setErrorMessage(null);
 
       try {
+        console.info("[velvet/recruit] starting", {
+          userId: resolvedUserId,
+          characterId,
+          worldId,
+        });
         const questLineId = activeQuestLineIdRef.current;
 
         const recruitment = await recruitQuestmaster({
-          userId,
+          userId: resolvedUserId,
           worldId,
           characterId,
           questLineId,
@@ -4993,9 +5053,15 @@ export default function HomePage(): ReactNode {
           error instanceof Error
             ? error.message
             : "Failed to recruit questmaster.";
+        console.error("[velvet/recruit] failed:", message, error);
+        setRecruitError(message);
         setErrorMessage(message);
+        if (typeof window !== "undefined") {
+          window.alert(`Questmaster sync failed: ${message}`);
+        }
       } finally {
         isRecruitingQuestmasterRef.current = false;
+        setIsRecruitingQuestmaster(false);
       }
     },
     [clearChatSessionState, userId],
@@ -5308,6 +5374,8 @@ export default function HomePage(): ReactNode {
               userId={userId}
               trust={trust}
               instantMount={instantDashboardMountRef.current}
+              isRecruitingQuestmaster={isRecruitingQuestmaster}
+              recruitError={recruitError}
               onSelectLobbyWorld={handleSelectLobbyWorld}
               onContinueFromLobby={handleContinueFromLobby}
               onSelectLobbyCharacter={handleSelectLobbyCharacter}

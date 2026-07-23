@@ -1,4 +1,5 @@
-import { getOrCreateConversation } from "@/lib/chat/conversation-store";
+import { getOrCreateConversation, getCharacter } from "@/lib/chat/conversation-store";
+import { WORLD_ID_TO_NAME } from "@/lib/chat/character-fallbacks";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import {
   buildQuestLineStoryId,
@@ -93,6 +94,7 @@ export async function recruitActiveQuestmaster(
   const storyId = resolveStoryId(input.characterId, questLineId);
   const sessionState: RpgSessionState = "onboarding_cold_open";
   const supabase = getSupabaseAdmin();
+  const now = new Date().toISOString();
 
   // Ensure user row exists before mentor FK upsert (OAuth users may skip provision).
   const { error: userUpsertError } = await supabase.from("users").upsert(
@@ -108,34 +110,90 @@ export async function recruitActiveQuestmaster(
     console.warn("[rpg-session] user upsert warning:", userUpsertError.message);
   }
 
-  const { error: profileError } = await supabase.from("user_quest_profiles").upsert(
-    {
-      user_id: input.userId,
-      active_mentor_character_id: input.characterId,
-      active_world_id: input.worldId,
-      quest_line_id: questLineId,
-      active_story_id: storyId,
-      session_state: sessionState,
-      quest_status: questLineId ? "NONE" : "UNLOCKED",
-      xp_total: 0,
-      xp_multiplier: 1.0,
-      mission_index: 1,
-      verified_quest_count: 0,
-      consecutive_milestone_streak: 0,
-      quest_pending_at: null,
-      last_completed_at: null,
-      affinity_trust_bonus: 0,
-      arc_progress: 0,
-      affinity_score: 50,
-      status_tag: "TOXIC ATTRACTION",
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id" },
-  );
+  // Ensure world + character FK targets exist (seed may be empty on fresh prod).
+  const worldName =
+    WORLD_ID_TO_NAME[input.worldId] ?? `World ${input.worldId}`;
+  {
+    const { error: worldError } = await supabase.from("worlds").upsert(
+      {
+        id: input.worldId,
+        name: worldName,
+      },
+      { onConflict: "id" },
+    );
+    if (worldError) {
+      console.warn("[rpg-session] world upsert warning:", worldError.message);
+    }
+  }
 
-  if (profileError) {
+  // Ensures a characters row exists (fallback upsert when seed is empty).
+  await getCharacter(input.characterId);
+
+  const fullProfilePayload: Record<string, unknown> = {
+    user_id: input.userId,
+    active_mentor_character_id: input.characterId,
+    active_world_id: input.worldId,
+    quest_line_id: questLineId,
+    active_story_id: storyId,
+    session_state: sessionState,
+    quest_status: questLineId ? "NONE" : "UNLOCKED",
+    xp_total: 0,
+    xp_multiplier: 1.0,
+    mission_index: 1,
+    verified_quest_count: 0,
+    consecutive_milestone_streak: 0,
+    quest_pending_at: null,
+    last_completed_at: null,
+    affinity_trust_bonus: 0,
+    arc_progress: 0,
+    affinity_score: 50,
+    status_tag: "TOXIC ATTRACTION",
+    updated_at: now,
+  };
+
+  // Minimal payload for DBs that only have hardware columns + session core.
+  const minimalProfilePayload: Record<string, unknown> = {
+    user_id: input.userId,
+    active_mentor_character_id: input.characterId,
+    active_world_id: input.worldId,
+    active_story_id: storyId,
+    session_state: sessionState,
+    arc_progress: 0,
+    affinity_score: 50,
+    status_tag: "TOXIC ATTRACTION",
+    updated_at: now,
+  };
+
+  const hardwareOnlyPayload: Record<string, unknown> = {
+    user_id: input.userId,
+    arc_progress: 0,
+    affinity_score: 50,
+    status_tag: "TOXIC ATTRACTION",
+  };
+
+  let profileErrorMessage: string | null = null;
+  for (const payload of [
+    fullProfilePayload,
+    minimalProfilePayload,
+    hardwareOnlyPayload,
+  ]) {
+    const { error } = await supabase
+      .from("user_quest_profiles")
+      .upsert(payload, { onConflict: "user_id" });
+    if (!error) {
+      profileErrorMessage = null;
+      break;
+    }
+    profileErrorMessage = error.message;
+    console.warn(
+      "[rpg-session] profile upsert attempt failed:",
+      error.message,
+    );
+  }
+
+  if (profileErrorMessage) {
     throw new Error(
-      `Failed to register active questmaster: ${profileError.message}`,
+      `Failed to register active questmaster: ${profileErrorMessage}`,
     );
   }
 
