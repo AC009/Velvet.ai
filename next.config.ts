@@ -1,11 +1,24 @@
 import type { NextConfig } from "next";
 import withPWAInit from "@ducanh2912/next-pwa";
 
+/**
+ * Workbox / @ducanh2912/next-pwa on Next 15 emits a production sw.js that
+ * references Babel helper `_async_to_generator` without bundling it, which
+ * crashes the client router cache (`Uncaught ReferenceError` in sw.js).
+ *
+ * PWA/Workbox generation is DISABLED. Phantom Push continues via the
+ * hand-written `public/sw.js` registered in `lib/frontend/push-register.ts`.
+ * Re-enable only with ENABLE_PWA=true after validating a clean SW build.
+ */
+const pwaDisabled = process.env.ENABLE_PWA !== "true";
+
 const withPWA = withPWAInit({
   dest: "public",
-  disable: process.env.NODE_ENV === "development",
-  register: true,
-  customWorkerSrc: "worker",
+  disable: pwaDisabled,
+  register: !pwaDisabled,
+  buildExcludes: [/middleware-manifest\.json$/, /app-build-manifest\.json$/],
+  // Only merge the custom worker when Workbox generation is explicitly enabled.
+  ...(pwaDisabled ? {} : { customWorkerSrc: "worker" }),
   workboxOptions: {
     skipWaiting: true,
     clientsClaim: true,
