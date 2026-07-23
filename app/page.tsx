@@ -5016,6 +5016,13 @@ export default function HomePage(): ReactNode {
           questLineId,
         });
 
+        if (recruitment.degraded) {
+          console.warn(
+            "[velvet/recruit] degraded success:",
+            recruitment.warnings ?? [],
+          );
+        }
+
         track("character_selected", { characterId });
         track("questmaster_recruited", {
           characterId: recruitment.mentorCharacterId,
@@ -5025,6 +5032,8 @@ export default function HomePage(): ReactNode {
         });
 
         clearChatSessionState();
+        setRecruitError(null);
+        setErrorMessage(null);
 
         if (recruitment.questLineId) {
           setActiveQuestLineId(recruitment.questLineId);
@@ -5041,9 +5050,13 @@ export default function HomePage(): ReactNode {
 
         setActiveStoryId(recruitment.storyId);
         setActiveStoryTitle(null);
-        setConversationId(recruitment.conversationId);
-        setSelectedCharacterId(characterId);
-        setSelectedWorldId(worldId);
+        setConversationId(
+          recruitment.conversationId > 0 ? recruitment.conversationId : null,
+        );
+        setSelectedCharacterId(recruitment.mentorCharacterId || characterId);
+        setSelectedWorldId(recruitment.worldId || worldId);
+        setIsChapterLocked(false);
+        setQuestStatus("UNLOCKED");
         setDashboardView("chat");
         setPhase("chat");
         setCurrentTab("character");
