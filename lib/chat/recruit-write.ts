@@ -233,38 +233,57 @@ async function safeCreateConversation(
   storyId: string,
   characterId: number,
 ): Promise<Conversation> {
+  const payloadQuestmasterId =
+    characterId && Number.isFinite(characterId) && characterId > 0
+      ? characterId
+      : DEFAULT_QUESTMASTER_ID;
+  const payloadWorldId =
+    worldId && Number.isFinite(worldId) && worldId > 0
+      ? worldId
+      : DEFAULT_WORLD_ID;
+
   try {
-    return await getOrCreateConversation(userId, worldId, storyId, characterId);
+    return await getOrCreateConversation(
+      userId,
+      payloadWorldId,
+      storyId,
+      payloadQuestmasterId,
+      {
+        questmaster_id: payloadQuestmasterId,
+        characterId: payloadQuestmasterId,
+        character_id: payloadQuestmasterId,
+        world_id: payloadWorldId,
+        worldId: payloadWorldId,
+        storyId,
+      },
+    );
   } catch (error) {
     console.warn(
-      "[recruit-write] conversation create failed, trying minimal insert:",
+      "[recruit-write] conversation create failed, trying forced questmaster insert:",
       error,
     );
   }
 
   const supabase = getSupabaseAdmin();
+  // EVERY attempt binds questmaster_id — prod NOT NULL constraint.
   const minimalAttempts: Record<string, unknown>[] = [
     {
       user_id: userId,
-      world_id: worldId,
+      world_id: payloadWorldId,
       story_id: storyId,
-      character_id: characterId,
-      questmaster_id: characterId,
+      character_id: payloadQuestmasterId,
+      questmaster_id: payloadQuestmasterId,
     },
     {
       user_id: userId,
-      world_id: worldId,
+      world_id: payloadWorldId,
       story_id: storyId,
-      character_id: characterId,
+      questmaster_id: payloadQuestmasterId,
     },
     {
       user_id: userId,
-      world_id: worldId,
-      story_id: storyId,
-    },
-    {
-      user_id: userId,
-      world_id: worldId,
+      world_id: payloadWorldId,
+      questmaster_id: payloadQuestmasterId,
     },
   ];
 
@@ -284,21 +303,21 @@ async function safeCreateConversation(
     }
   }
 
-  // Absolute last resort — ephemeral in-memory stub so UI can proceed.
-  // Chat init will reconcile a real conversation on next message.
-  const stub: Conversation = {
+  console.error(
+    "[recruit-write] conversation writes exhausted — returning degraded stub.",
+  );
+  return {
     id: 0,
     user_id: userId,
-    world_id: worldId,
+    world_id: payloadWorldId,
     story_id: storyId,
-    character_id: characterId,
-    questmaster_id: characterId,
+    character_id: payloadQuestmasterId,
+    questmaster_id: payloadQuestmasterId,
     locked_until: null,
     payment_intent_clicks: 0,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
-  return stub;
 }
 
 /**

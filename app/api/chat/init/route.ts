@@ -240,6 +240,14 @@ export async function POST(request: Request): Promise<Response> {
       body.worldId,
       storyId,
       body.characterId,
+      {
+        questmaster_id: body.characterId,
+        characterId: body.characterId,
+        character_id: body.characterId,
+        world_id: body.worldId,
+        worldId: body.worldId,
+        storyId,
+      },
     );
 
     let character: Awaited<ReturnType<typeof getCharacter>>;

@@ -197,12 +197,40 @@ export async function recruitActiveQuestmaster(
     );
   }
 
-  const conversation = await getOrCreateConversation(
-    input.userId,
-    input.worldId,
-    storyId,
-    input.characterId,
-  );
+  let conversation;
+  try {
+    conversation = await getOrCreateConversation(
+      input.userId,
+      input.worldId,
+      storyId,
+      input.characterId,
+      {
+        questmaster_id: input.characterId,
+        characterId: input.characterId,
+        character_id: input.characterId,
+        world_id: input.worldId,
+        worldId: input.worldId,
+        storyId,
+      },
+    );
+  } catch (error) {
+    console.error(
+      "[rpg-session] getOrCreateConversation failed — degraded stub:",
+      error,
+    );
+    conversation = {
+      id: 0,
+      user_id: input.userId,
+      world_id: input.worldId,
+      story_id: storyId,
+      character_id: input.characterId,
+      questmaster_id: input.characterId,
+      locked_until: null,
+      payment_intent_clicks: 0,
+      created_at: now,
+      updated_at: now,
+    };
+  }
 
   return {
     mentorCharacterId: input.characterId,

@@ -44,7 +44,13 @@ function parseBody(raw: unknown): CompleteRequestBody {
 
   const body = raw as Record<string, unknown>;
 
-  if (typeof body.userId !== "string" || !isValidUuid(body.userId)) {
+  const userId =
+    typeof body.userId === "string"
+      ? body.userId
+      : typeof body.user_id === "string"
+        ? body.user_id
+        : null;
+  if (!userId || !isValidUuid(userId)) {
     throw new Error("userId must be a valid UUID string.");
   }
 
@@ -52,26 +58,55 @@ function parseBody(raw: unknown): CompleteRequestBody {
     throw new Error("verification must be a string.");
   }
 
+  const payloadQuestmasterId =
+    body.questmaster_id ||
+    body.characterId ||
+    body.character_id ||
+    body.id ||
+    body.questmasterId;
+
+  const payloadWorldId =
+    body.world_id || body.worldId || body.world_type || body.genre;
+
   const worldId =
-    typeof body.worldId === "number" && Number.isInteger(body.worldId)
-      ? body.worldId
-      : undefined;
+    payloadWorldId === null ||
+    payloadWorldId === undefined ||
+    payloadWorldId === ""
+      ? undefined
+      : typeof payloadWorldId === "number" && Number.isInteger(payloadWorldId)
+        ? payloadWorldId
+        : Number(payloadWorldId);
 
   const characterId =
-    typeof body.characterId === "number" && Number.isInteger(body.characterId)
-      ? body.characterId
-      : undefined;
+    payloadQuestmasterId === null ||
+    payloadQuestmasterId === undefined ||
+    payloadQuestmasterId === ""
+      ? undefined
+      : typeof payloadQuestmasterId === "number" &&
+          Number.isInteger(payloadQuestmasterId)
+        ? payloadQuestmasterId
+        : Number(payloadQuestmasterId);
 
   const storyId =
     typeof body.storyId === "string" && body.storyId.trim().length > 0
       ? body.storyId.trim()
-      : undefined;
+      : typeof body.story_id === "string" && body.story_id.trim().length > 0
+        ? body.story_id.trim()
+        : undefined;
 
   return {
-    userId: body.userId,
+    userId,
     verification: body.verification,
-    worldId,
-    characterId,
+    worldId:
+      typeof worldId === "number" && Number.isFinite(worldId) && worldId > 0
+        ? Math.floor(worldId)
+        : undefined,
+    characterId:
+      typeof characterId === "number" &&
+      Number.isFinite(characterId) &&
+      characterId > 0
+        ? Math.floor(characterId)
+        : undefined,
     storyId,
   };
 }
@@ -91,9 +126,10 @@ export async function POST(request: Request): Promise<Response> {
       return jsonError("No pending mission to complete.", 409);
     }
 
-    const worldId = body.worldId ?? profile.active_world_id;
-    const characterId = body.characterId ?? profile.active_mentor_character_id;
-    const storyId = body.storyId ?? profile.active_story_id;
+    const worldId = body.worldId ?? profile.active_world_id ?? 3;
+    const characterId =
+      body.characterId ?? profile.active_mentor_character_id ?? 8;
+    const storyId = body.storyId ?? profile.active_story_id ?? "default";
 
     const character = await getCharacter(characterId);
     const conversation = await getOrCreateConversation(
@@ -101,6 +137,14 @@ export async function POST(request: Request): Promise<Response> {
       worldId,
       storyId,
       characterId,
+      {
+        questmaster_id: characterId,
+        characterId,
+        character_id: characterId,
+        world_id: worldId,
+        worldId,
+        storyId,
+      },
     );
 
     const slimHistory = await fetchGlobalNarrativeHistory(worldId, 24);

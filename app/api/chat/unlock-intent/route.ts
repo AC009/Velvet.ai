@@ -2,6 +2,8 @@ import {
   clearConversationLock,
   getOrCreateConversation,
   incrementPaymentIntentClicks,
+  resolveConversationWorldId,
+  resolveQuestmasterId,
 } from "@/lib/chat/conversation-store";
 import { isValidUuid, jsonError } from "@/lib/chat/sse";
 
@@ -11,6 +13,7 @@ export const dynamic = "force-dynamic";
 interface UnlockIntentBody {
   userId: string;
   worldId: number;
+  characterId: number;
 }
 
 function parseBody(raw: unknown): UnlockIntentBody {
@@ -20,38 +23,105 @@ function parseBody(raw: unknown): UnlockIntentBody {
 
   const body = raw as Record<string, unknown>;
 
-  if (typeof body.userId !== "string" || !isValidUuid(body.userId)) {
+  const userId =
+    typeof body.userId === "string"
+      ? body.userId
+      : typeof body.user_id === "string"
+        ? body.user_id
+        : null;
+  if (!userId || !isValidUuid(userId)) {
     throw new Error("userId must be a valid UUID string.");
   }
 
-  if (
-    typeof body.worldId !== "number" ||
-    !Number.isInteger(body.worldId) ||
-    body.worldId <= 0
-  ) {
-    throw new Error("worldId must be a positive integer.");
-  }
+  const payloadQuestmasterId =
+    body.questmaster_id ||
+    body.characterId ||
+    body.character_id ||
+    body.id ||
+    body.questmasterId ||
+    "watcher";
 
-  return { userId: body.userId, worldId: body.worldId };
+  const payloadWorldId =
+    body.world_id ||
+    body.worldId ||
+    body.world_type ||
+    body.genre ||
+    "horror_mystery";
+
+  return {
+    userId,
+    worldId: resolveConversationWorldId(payloadWorldId, "horror_mystery"),
+    characterId: resolveQuestmasterId(payloadQuestmasterId, "watcher"),
+  };
 }
 
 export async function POST(request: Request): Promise<Response> {
   try {
-    const raw = await request.json();
-    const body = parseBody(raw);
+    let raw: unknown;
+    try {
+      raw = await request.json();
+    } catch {
+      return jsonError("Request body must be valid JSON.", 400);
+    }
 
-    const conversation = await getOrCreateConversation(body.userId, body.worldId);
-    const paymentIntentClicks = await incrementPaymentIntentClicks(
-      conversation.id,
-    );
-    await clearConversationLock(conversation.id);
+    let body: UnlockIntentBody;
+    try {
+      body = parseBody(raw);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Invalid request payload.";
+      return jsonError(message, 400);
+    }
 
-    return Response.json({
-      conversationId: conversation.id,
-      paymentIntentClicks,
-      unlocked: true,
-      message: "Server capacity expanding. Enjoy this chapter for free!",
-    });
+    try {
+      const conversation = await getOrCreateConversation(
+        body.userId,
+        body.worldId,
+        "default",
+        body.characterId,
+        {
+          questmaster_id: body.characterId,
+          characterId: body.characterId,
+          world_id: body.worldId,
+          worldId: body.worldId,
+        },
+      );
+
+      // Degraded stub (id 0) — still unlock UX without crashing.
+      if (!conversation.id) {
+        console.warn(
+          "[velvet/chat/unlock-intent] degraded conversation stub — skipping lock mutation.",
+        );
+        return Response.json({
+          conversationId: 0,
+          paymentIntentClicks: 0,
+          unlocked: true,
+          degraded: true,
+          message: "Server capacity expanding. Enjoy this chapter for free!",
+        });
+      }
+
+      const paymentIntentClicks = await incrementPaymentIntentClicks(
+        conversation.id,
+      );
+      await clearConversationLock(conversation.id);
+
+      return Response.json({
+        conversationId: conversation.id,
+        paymentIntentClicks,
+        unlocked: true,
+        message: "Server capacity expanding. Enjoy this chapter for free!",
+      });
+    } catch (error) {
+      console.error("[velvet/chat/unlock-intent] db path failed:", error);
+      return Response.json({
+        conversationId: 0,
+        paymentIntentClicks: 0,
+        unlocked: true,
+        degraded: true,
+        message: "Server capacity expanding. Enjoy this chapter for free!",
+      });
+    }
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Internal server error.";
