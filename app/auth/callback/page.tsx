@@ -69,7 +69,14 @@ export default function AuthCallbackPage(): ReactNode {
           return;
         }
 
-        if (accessToken && refreshToken) {
+        if (
+          window.location.hash.includes("access_token") ||
+          (accessToken && refreshToken)
+        ) {
+          if (!accessToken || !refreshToken) {
+            router.replace("/?auth_error=missing_auth_params");
+            return;
+          }
           const { error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
@@ -78,6 +85,13 @@ export default function AuthCallbackPage(): ReactNode {
             router.replace(`/?auth_error=${encodeURIComponent(error.message)}`);
             return;
           }
+          router.replace("/");
+          return;
+        }
+
+        // Already authenticated (e.g. API route pre-exchanged) — land on home.
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
           router.replace("/");
           return;
         }

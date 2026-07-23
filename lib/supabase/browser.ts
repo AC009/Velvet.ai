@@ -201,14 +201,31 @@ export function getSupabaseBrowser(): SupabaseClient {
   return browserClient;
 }
 
+/**
+ * OAuth redirect target — must match an allowlisted URL in Supabase Auth settings.
+ * Uses the live browser origin so preview / production hosts never drift.
+ */
 export function getOAuthRedirectUrl(): string {
-  if (process.env.NODE_ENV === "production") {
-    return "https://velvet-ai1-7qsh.vercel.app/auth/callback";
+  const configuredSite = (
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXT_PUBLIC_VERCEL_URL ||
+    ""
+  )
+    .trim()
+    .replace(/\/$/, "");
+
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return `${window.location.origin}/api/auth/callback`;
   }
 
-  if (typeof window === "undefined") {
-    return "/auth/callback";
+  if (configuredSite) {
+    const origin = configuredSite.startsWith("http")
+      ? configuredSite
+      : `https://${configuredSite}`;
+    return `${origin}/api/auth/callback`;
   }
 
-  return `${window.location.origin}/auth/callback`;
+  // Fallback for SSR / build-time callers — keep in sync with live Vercel project.
+  return "https://velvet-ai-gold.vercel.app/api/auth/callback";
 }
+

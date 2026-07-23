@@ -3569,9 +3569,8 @@ export default function HomePage(): ReactNode {
 
     const hydrateAuthSession = async (): Promise<void> => {
       if (typeof window !== "undefined") {
-        const hashParams = new URLSearchParams(
-          window.location.hash.replace(/^#/, ""),
-        );
+        const rawHash = window.location.hash || "";
+        const hashParams = new URLSearchParams(rawHash.replace(/^#/, ""));
         const searchParams = new URLSearchParams(window.location.search);
         const accessToken =
           hashParams.get("access_token") ?? searchParams.get("access_token");
@@ -3579,12 +3578,29 @@ export default function HomePage(): ReactNode {
           hashParams.get("refresh_token") ?? searchParams.get("refresh_token");
         const code = searchParams.get("code");
 
-        if (code) {
+        // Client fallback: Supabase sometimes returns implicit tokens on `/#access_token=…`
+        // (hash is invisible to the server). Persist session, then scrub the URL.
+        if (rawHash.includes("access_token") && accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (error) {
+            console.warn(
+              "[velvet/auth] OAuth hash session failed:",
+              error.message,
+            );
+          }
+          window.history.replaceState({}, "", "/");
+        } else if (code) {
           const { error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) {
-            console.warn("[velvet/auth] OAuth code exchange failed:", error.message);
+            console.warn(
+              "[velvet/auth] OAuth code exchange failed:",
+              error.message,
+            );
           } else {
-            window.history.replaceState({}, "", window.location.pathname);
+            window.history.replaceState({}, "", "/");
           }
         } else if (accessToken && refreshToken) {
           const { error } = await supabase.auth.setSession({
@@ -3592,9 +3608,12 @@ export default function HomePage(): ReactNode {
             refresh_token: refreshToken,
           });
           if (error) {
-            console.warn("[velvet/auth] OAuth hash session failed:", error.message);
+            console.warn(
+              "[velvet/auth] OAuth hash session failed:",
+              error.message,
+            );
           } else {
-            window.history.replaceState({}, "", window.location.pathname);
+            window.history.replaceState({}, "", "/");
           }
         }
       }
