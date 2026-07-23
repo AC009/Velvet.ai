@@ -18,6 +18,8 @@ import {
   insertAssistantMessage,
   insertUserMessage,
   isConversationLocked,
+  resolveConversationWorldId,
+  resolveQuestmasterId,
 } from "@/lib/chat/conversation-store";
 import { generateReplySuggestionsSafe } from "@/lib/chat/reply-suggestions";
 import { streamLlmCompletion } from "@/lib/chat/llm-stream";
@@ -79,21 +81,26 @@ function parseRequestBody(raw: unknown): ChatRequestBody {
 
   const body = raw as Record<string, unknown>;
 
-  if (typeof body.userId !== "string" || !isValidUuid(body.userId)) {
+  const userId =
+    typeof body.userId === "string"
+      ? body.userId
+      : typeof body.user_id === "string"
+        ? body.user_id
+        : null;
+  if (!userId || !isValidUuid(userId)) {
     throw new Error("userId must be a valid UUID string.");
   }
 
-  if (typeof body.worldId !== "number" || !Number.isInteger(body.worldId) || body.worldId <= 0) {
-    throw new Error("worldId must be a positive integer.");
-  }
-
-  if (
-    typeof body.characterId !== "number" ||
-    !Number.isInteger(body.characterId) ||
-    body.characterId <= 0
-  ) {
-    throw new Error("characterId must be a positive integer.");
-  }
+  const worldId = resolveConversationWorldId(
+    body.worldId ?? body.world_id ?? body.world_type ?? body.genre,
+  );
+  const characterId = resolveQuestmasterId(
+    body.questmaster_id ??
+      body.questmasterId ??
+      body.characterId ??
+      body.character_id ??
+      body.id,
+  );
 
   if (typeof body.message !== "string") {
     throw new Error("message must be a string.");
@@ -122,9 +129,9 @@ function parseRequestBody(raw: unknown): ChatRequestBody {
   const isOptionSelection = body.isOptionSelection === true;
 
   return {
-    userId: body.userId,
-    worldId: body.worldId,
-    characterId: body.characterId,
+    userId,
+    worldId,
+    characterId,
     message,
     storyId,
     behaviorSystemPrompt,

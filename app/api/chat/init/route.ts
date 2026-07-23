@@ -21,6 +21,8 @@ import {
   getOrCreateConversation,
   insertAssistantMessage,
   isConversationLocked,
+  resolveConversationWorldId,
+  resolveQuestmasterId,
 } from "@/lib/chat/conversation-store";
 import {
   generateGreetingBundle,
@@ -70,6 +72,18 @@ interface ParsedInitBody extends ChatInitRequestBody {
   dialogueBehavior?: ChatInitRequestBody["dialogueBehavior"];
 }
 
+function pickAlias(
+  body: Record<string, unknown>,
+  keys: string[],
+): unknown {
+  for (const key of keys) {
+    if (key in body && body[key] !== undefined && body[key] !== null) {
+      return body[key];
+    }
+  }
+  return undefined;
+}
+
 function parseInitRequestBody(raw: unknown): ParsedInitBody {
   if (!raw || typeof raw !== "object") {
     throw new Error("Request body must be a JSON object.");
@@ -77,25 +91,30 @@ function parseInitRequestBody(raw: unknown): ParsedInitBody {
 
   const body = raw as Record<string, unknown>;
 
-  if (typeof body.userId !== "string" || !isValidUuid(body.userId)) {
+  const userIdRaw = pickAlias(body, ["userId", "user_id", "uid"]);
+  if (typeof userIdRaw !== "string" || !isValidUuid(userIdRaw)) {
     throw new Error("userId must be a valid UUID string.");
   }
 
-  if (
-    typeof body.worldId !== "number" ||
-    !Number.isInteger(body.worldId) ||
-    body.worldId <= 0
-  ) {
-    throw new Error("worldId must be a positive integer.");
-  }
+  const worldId = resolveConversationWorldId(
+    pickAlias(body, [
+      "worldId",
+      "world_id",
+      "world_type",
+      "worldType",
+      "genre",
+    ]),
+  );
 
-  if (
-    typeof body.characterId !== "number" ||
-    !Number.isInteger(body.characterId) ||
-    body.characterId <= 0
-  ) {
-    throw new Error("characterId must be a positive integer.");
-  }
+  const characterId = resolveQuestmasterId(
+    pickAlias(body, [
+      "questmaster_id",
+      "questmasterId",
+      "characterId",
+      "character_id",
+      "id",
+    ]),
+  );
 
   const storyId =
     typeof body.storyId === "string" && body.storyId.trim().length > 0
@@ -148,9 +167,9 @@ function parseInitRequestBody(raw: unknown): ParsedInitBody {
   }
 
   return {
-    userId: body.userId,
-    worldId: body.worldId,
-    characterId: body.characterId,
+    userId: userIdRaw,
+    worldId,
+    characterId,
     storyId,
     questLineId,
     lastSeenAt,

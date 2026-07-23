@@ -1,0 +1,13 @@
+LINE_COUNT=453
+getOrCreateConversation
+isConversationLocked
+getCharacter
+countAssistantMessages
+countConversationMessages
+insertUserMessage
+insertAssistantMessage
+fetchConversationMessages
+fetchRecentConversationTurns
+applyConversationLock
+clearConversationLock
+incrementPaymentIntentClicks

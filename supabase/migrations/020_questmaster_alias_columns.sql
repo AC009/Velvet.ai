@@ -16,7 +16,7 @@ SET questmaster_id = active_mentor_character_id
 WHERE questmaster_id IS NULL
   AND active_mentor_character_id IS NOT NULL;
 
-UPDATE public.user_quest_profiles
+UPDATE public.user_quest_profiles 
 SET character_id = active_mentor_character_id
 WHERE character_id IS NULL
   AND active_mentor_character_id IS NOT NULL;

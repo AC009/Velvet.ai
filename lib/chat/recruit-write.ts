@@ -292,6 +292,7 @@ async function safeCreateConversation(
     world_id: worldId,
     story_id: storyId,
     character_id: characterId,
+    questmaster_id: characterId,
     locked_until: null,
     payment_intent_clicks: 0,
     created_at: new Date().toISOString(),

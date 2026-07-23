@@ -1,0 +1,12 @@
+getOrCreateConversation
+isConversationLocked
+getCharacter
+countAssistantMessages
+countConversationMessages
+insertUserMessage
+insertAssistantMessage
+fetchConversationMessages
+fetchRecentConversationTurns
+applyConversationLock
+clearConversationLock
+incrementPaymentIntentClicks

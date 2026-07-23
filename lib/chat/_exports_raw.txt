@@ -1,0 +1,14 @@
+21:export async function getOrCreateConversation(
+154:export function isConversationLocked(conversation: Conversation): boolean {
+199:export async function getCharacter(characterId: number): Promise<Character> {
+223:export async function countAssistantMessages(
+241:export async function countConversationMessages(
+258:export async function insertUserMessage(
+283:export async function insertAssistantMessage(
+326:export interface StoredConversationMessage {
+334:export async function fetchConversationMessages(
+353:export interface RecentConversationTurn {
+359:export async function fetchRecentConversationTurns(
+387:export async function applyConversationLock(
+407:export async function clearConversationLock(
+422:export async function incrementPaymentIntentClicks(

@@ -29,6 +29,8 @@ export interface Conversation {
   user_id: string;
   world_id: number;
   character_id?: number | null;
+  /** Prod NOT NULL alias of the active questmaster / character identity. */
+  questmaster_id?: number | null;
   story_id?: string;
   locked_until: string | null;
   payment_intent_clicks: number;
