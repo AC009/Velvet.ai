@@ -1,0 +1,86 @@
+Commit result summary (OAuth auth callback fix)
+
+=== 1. git status (pre) ===
+On branch main
+Your branch is ahead of 'origin/main' by 1 commit.
+  (use "git push" to publish your local commits)
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	_auth_status.txt
+	_commit_probe.txt
+	_commit_probe2.txt
+	_commit_result.txt
+	_commit_result_copy.txt
+	_do_commit.py
+	_finalize_commit.py
+	_git_diff1.txt
+	_git_log1.txt
+	_git_out.txt
+	_git_staged1.txt
+	_git_status1.txt
+	_git_status2.txt
+	_probe_commit.py
+	_shell_test.txt
+
+nothing added to commit but untracked files present (use "git add" to track)
+
+=== 1. git diff --stat (pre) ===
+(empty)
+
+=== 1. git log -5 --oneline ===
+f7c5c76 Fix OAuth redirect to live origin callback and harden hash session recovery
+a0f5172 feat!: complete velvet.ai pivot - absolute production release with hardware sensors, empathy core, pwa stack, and full english content nodes
+a2058fa fix: absolute server-side environment runtime injection pass
+e2556f2 Initial production deployment: Velvet Quest certified system architecture for US market
+
+=== 2. Staged files (targets only) ===
+lib/supabase/browser.ts
+app/api/auth/callback/route.ts
+app/auth/callback/page.tsx
+app/page.tsx
+porcelain: (clean)
+
+=== 3. Commit ===
+subject: Fix OAuth redirect to live origin callback and harden hash session recovery
+body: Route Google OAuth through /api/auth/callback using the current host instead of a stale Vercel URL, then hand off PKCE codes to the client callback and scrub #access_token fragments on /.
+No uncommitted changes in auth files; commit not recreated (no amend).
+attempted_new_commit=False
+
+=== 4. git status (after) ===
+On branch main
+Your branch is ahead of 'origin/main' by 1 commit.
+  (use "git push" to publish your local commits)
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	_auth_status.txt
+	_commit_probe.txt
+	_commit_probe2.txt
+	_commit_result.txt
+	_commit_result_copy.txt
+	_do_commit.py
+	_finalize_commit.py
+	_git_diff1.txt
+	_git_log1.txt
+	_git_out.txt
+	_git_staged1.txt
+	_git_status1.txt
+	_git_status2.txt
+	_probe_commit.py
+	_shell_test.txt
+
+nothing added to commit but untracked files present (use "git add" to track)
+
+=== HEAD ===
+f7c5c769d11c6498f1167383219ee0d54013432c
+Fix OAuth redirect to live origin callback and harden hash session recovery
+Route Google OAuth through /api/auth/callback using the current host instead of a stale Vercel URL, then hand off PKCE codes to the client callback and scrub #access_token fragments on /.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+RESULT=already_present
+Desired commit already on HEAD; auth files had no pending changes. Did not push. Did not amend.
+pushed=no
+amended=no
+config_updated=no
