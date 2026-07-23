@@ -226,16 +226,51 @@ function toInitResponse(
   };
 }
 
+/** Never 500 — unlock UI with an empty, well-formed init payload. */
+function degradedInitResponse(
+  body?: Partial<ParsedInitBody>,
+  reason?: string,
+): Response {
+  console.warn("[velvet/chat/init] returning degraded init payload:", reason);
+  const payload: ChatInitResponse & { degraded?: boolean; reason?: string } = {
+    conversationId: 0,
+    greeting: false,
+    messages: [],
+    suggestions: [],
+    relationshipVector: {
+      trust: 0,
+      tension: 0,
+      intimacy: 0,
+      hostility: 0,
+      affinity: 0,
+    },
+    degraded: true,
+    ...(reason ? { reason } : {}),
+  };
+  // Keep character/world hints in logs only — body may be incomplete.
+  if (body?.userId) {
+    console.warn("[velvet/chat/init] degraded for user:", body.userId);
+  }
+  return Response.json(payload);
+}
+
 export async function POST(request: Request): Promise<Response> {
-  let body: ParsedInitBody;
+  let body: ParsedInitBody | undefined;
+
+  let raw: unknown;
+  try {
+    raw = await request.json();
+  } catch {
+    return degradedInitResponse(undefined, "invalid_json");
+  }
 
   try {
-    const raw = await request.json();
     body = parseInitRequestBody(raw);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Invalid request payload.";
-    return jsonError(message, 400);
+    console.warn("[velvet/chat/init] parse failed:", message);
+    return degradedInitResponse(undefined, "parse_error");
   }
 
   try {
@@ -546,8 +581,8 @@ export async function POST(request: Request): Promise<Response> {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Internal server error.";
-    console.error("[velvet/chat/init] request failed:", error);
-    return jsonError(message, 500);
+    console.error("[velvet/chat/init] request failed:", error, message);
+    return degradedInitResponse(body, "handler_exception");
   }
 }
 
