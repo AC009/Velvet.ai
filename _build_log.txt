@@ -1,0 +1,34 @@
+
+> velvet-ai@1.0.0 build
+> next build
+
+   ▲ Next.js 15.5.19
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ (pwa) Compiling for server...
+ ✓ (pwa) Compiling for server...
+ ✓ (pwa) Compiling for client (static)...
+ ○ (pwa) Service worker: c:\velvet\public\sw.js
+ ○ (pwa)   URL: /sw.js
+ ○ (pwa)   Scope: /
+ ✓ (pwa) Found a custom worker implementation at c:\velvet\worker\index.ts.
+ ✓ (pwa) Building the custom worker to c:\velvet\public\worker-6fd8df9d31455c12.js...
+ ○ (pwa) Custom runtimeCaching array found, using it instead of the default one.
+ ✓ Compiled successfully in 13.3s
+   Linting and checking validity of types ...
+Failed to compile.
+
+./app/components/MissionGate.tsx:256:15
+Type error: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '"mission_verified"' is not assignable to parameter of type '"user_licked_share_progress"'.
+
+[0m [90m 254 |[39m         setPhase([32m"approved"[39m)[33m;[39m
+ [90m 255 |[39m         setPulseSuccess([36mtrue[39m)[33m;[39m
+[31m[1m>[22m[39m[90m 256 |[39m         track([32m"mission_verified"[39m[33m,[39m {
+ [90m     |[39m               [31m[1m^[22m[39m
+ [90m 257 |[39m           status[33m:[39m [32m"success"[39m[33m,[39m
+ [90m 258 |[39m           score_impact[33m:[39m [35m10[39m[33m,[39m
+ [90m 259 |[39m           missionId[33m,[39m[0m
+Next.js build worker exited with code: 1 and signal: null

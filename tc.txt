@@ -1,0 +1,23 @@
+
+> velvet-ai@1.0.0 typecheck
+> tsc --noEmit
+
+app/components/MissionGate.tsx(393,17): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '"mission_verified"' is not assignable to parameter of type '"user_licked_share_progress"'.
+app/components/MissionGate.tsx(454,13): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '"mission_verified"' is not assignable to parameter of type '"user_licked_share_progress"'.
+app/components/MissionGate.tsx(614,13): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '"empathy_checkin"' is not assignable to parameter of type '"user_licked_share_progress"'.
+app/components/MissionGate.tsx(662,11): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '"mission_submission_attempt"' is not assignable to parameter of type '"user_licked_share_progress"'.
+app/components/MissionGate.tsx(713,15): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '"mission_verified"' is not assignable to parameter of type '"user_licked_share_progress"'.
+
+---STDERR---
+
+EXIT=1

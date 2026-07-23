@@ -1,0 +1,5 @@
+app/components/MissionGate.tsx(393,17): error TS2769: No overload matches this call.
+app/components/MissionGate.tsx(454,13): error TS2769: No overload matches this call.
+app/components/MissionGate.tsx(614,13): error TS2769: No overload matches this call.
+app/components/MissionGate.tsx(662,11): error TS2769: No overload matches this call.
+app/components/MissionGate.tsx(713,15): error TS2769: No overload matches this call.

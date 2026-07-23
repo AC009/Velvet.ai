@@ -1,0 +1,13 @@
+﻿
+
+    Directory: C:\velvet\public\icons
+
+
+Mode                 LastWriteTime         Length Name                                                                 
+----                 -------------         ------ ----                                                                 
+-a----        22.07.2026     21:26            507 apple-touch-icon.png                                                 
+-a----        22.07.2026     21:26            557 icon-192.png                                                         
+-a----        22.07.2026     21:26           1889 icon-512.png                                                         
+-a----        22.07.2026     16:38            319 icon.svg                                                             
+
+

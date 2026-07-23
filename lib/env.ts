@@ -13,7 +13,9 @@ export interface PublicEnv {
 export interface ServerEnv {
   supabaseUrl: string;
   supabaseServiceRoleKey: string;
+  supabaseAnonKey: string;
   groqApiKey: string | null;
+  geminiApiKey: string | null;
   togetherApiKey: string | null;
   vapidPublicKey: string | null;
   vapidPrivateKey: string | null;
@@ -42,7 +44,10 @@ export function getServerEnv(): ServerEnv {
   return {
     supabaseUrl,
     supabaseServiceRoleKey: read("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    supabaseAnonKey:
+      read("SUPABASE_ANON_KEY") ?? read("NEXT_PUBLIC_SUPABASE_ANON_KEY") ?? "",
     groqApiKey: read("GROQ_API_KEY") ?? null,
+    geminiApiKey: read("GEMINI_API_KEY") ?? null,
     togetherApiKey: read("TOGETHER_API_KEY") ?? null,
     vapidPublicKey:
       read("VAPID_PUBLIC_KEY") ?? read("NEXT_PUBLIC_VAPID_PUBLIC_KEY") ?? null,
@@ -75,4 +80,8 @@ export function isSupabaseConfigured(env: ServerEnv = getServerEnv()): boolean {
 
 export function isGroqConfigured(env: ServerEnv = getServerEnv()): boolean {
   return Boolean(env.groqApiKey);
+}
+
+export function isGeminiConfigured(env: ServerEnv = getServerEnv()): boolean {
+  return Boolean(env.geminiApiKey);
 }

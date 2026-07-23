@@ -1,0 +1,46 @@
+{
+  "exit": 1,
+  "total_errors": 5,
+  "target_errors": [
+    {
+      "file": "app/components/MissionGate.tsx",
+      "line": "393",
+      "col": "17",
+      "code": "TS2769",
+      "msg": "No overload matches this call."
+    },
+    {
+      "file": "app/components/MissionGate.tsx",
+      "line": "454",
+      "col": "13",
+      "code": "TS2769",
+      "msg": "No overload matches this call."
+    },
+    {
+      "file": "app/components/MissionGate.tsx",
+      "line": "614",
+      "col": "13",
+      "code": "TS2769",
+      "msg": "No overload matches this call."
+    },
+    {
+      "file": "app/components/MissionGate.tsx",
+      "line": "662",
+      "col": "11",
+      "code": "TS2769",
+      "msg": "No overload matches this call."
+    },
+    {
+      "file": "app/components/MissionGate.tsx",
+      "line": "713",
+      "col": "15",
+      "code": "TS2769",
+      "msg": "No overload matches this call."
+    }
+  ],
+  "other_error_count": 0,
+  "other_errors_sample": [],
+  "all_error_files": [
+    "app/components/missiongate.tsx"
+  ]
+}

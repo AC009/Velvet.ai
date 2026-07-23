@@ -92,10 +92,35 @@ import {
 import type { QuestStatus } from "@/lib/chat/rpg-session-store";
 import {
   buildQuestLineStoryId,
+  getQuestLineDefinition,
+  parseQuestLineStoryId,
   readActiveQuestLineId,
   writeActiveQuestLineId,
   type QuestLineId,
 } from "@/lib/frontend/quest-line-matrix";
+import {
+  MissionGate,
+  type MissionGateSuccessPayload,
+} from "@/app/components/MissionGate";
+import type { HardwareStatusTag } from "@/lib/frontend/verify-mission";
+import {
+  DEFAULT_VALIDATION_OPENER,
+  getHardwareMissionByIndex,
+  getNextHardwareMissionIndex,
+  rollCliffhangerThreshold,
+  type HardwareMission,
+  type HardwareSensorKind,
+} from "@/lib/frontend/hardware-mission-pool";
+import {
+  RECOVERY_SYNC_MISSION,
+  isLowEnergy,
+  type EnergyLevel,
+} from "@/lib/empathy/engine";
+import { submitEmpathyCheckIn } from "@/lib/frontend/empathy-client";
+import {
+  fetchNextPoolMission,
+  generateStoryNode,
+} from "@/lib/frontend/content-engine";
 
 const SIGN_OUT_TRANSITION_MS = 600;
 
@@ -2266,31 +2291,47 @@ function trustToAffinityPercent(trust: number): number {
 function AffinityEngine({
   trust,
   flashing,
+  affinityPercentOverride = null,
+  statusTag = null,
 }: {
   trust: number;
   flashing: boolean;
+  affinityPercentOverride?: number | null;
+  statusTag?: HardwareStatusTag | null;
 }): ReactNode {
-  const percent = trustToAffinityPercent(trust);
-  const isWarm = trust >= 0;
+  const percent =
+    affinityPercentOverride != null
+      ? Math.round(affinityPercentOverride)
+      : trustToAffinityPercent(trust);
+  const isWarm = trust >= 0 || percent >= 50;
 
   return (
     <div className="mt-2.5">
       <div className="mb-1.5 flex items-center justify-between">
         <span
           className={`text-[9px] font-semibold uppercase tracking-[0.22em] transition-colors duration-300 ${
-            flashing ? "text-[#4ade80]" : "text-[#D4AF37]/70"
+            flashing ? "text-[#b87dff]" : "text-[#D4AF37]/70"
           }`}
         >
           Affinity Engine
         </span>
         <span
           className={`text-[10px] tabular-nums transition-colors duration-300 ${
-            flashing ? "text-[#4ade80]" : "text-[#D4AF37]/90"
+            flashing ? "text-[#b87dff]" : "text-[#D4AF37]/90"
           }`}
         >
           {percent}%
         </span>
       </div>
+      {statusTag && (
+        <p
+          className={`mb-1.5 text-[9px] font-bold uppercase tracking-[0.18em] ${
+            statusTag === "RESPECT" ? "text-[#b87dff]" : "text-[#e8476a]/85"
+          }`}
+        >
+          {statusTag}
+        </p>
+      )}
       <div className="h-[3px] w-full overflow-hidden rounded-full bg-[#1a1a1a]">
         <div
           className="h-full rounded-full"
@@ -2298,12 +2339,12 @@ function AffinityEngine({
             width: `${percent}%`,
             transition: "width 750ms ease-out, box-shadow 300ms ease-out, background 300ms ease-out",
             background: flashing
-              ? "linear-gradient(90deg, #16a34a, #4ade80, #bbf7d0)"
+              ? "linear-gradient(90deg, #5b2589, #9b59f0, #b87dff)"
               : isWarm
                 ? "linear-gradient(90deg, #8b6914, #D4AF37, #f5e6a8)"
                 : "linear-gradient(90deg, #590d22, #e8476a, #ff6b8a)",
             boxShadow: flashing
-              ? "0 0 14px rgba(74,222,128,0.65)"
+              ? "0 0 14px rgba(155,89,240,0.75)"
               : isWarm
                 ? "0 0 10px rgba(212,175,55,0.35)"
                 : "0 0 10px rgba(232,71,106,0.35)",
@@ -2705,6 +2746,15 @@ function ChatScreen({
   questCompleteError,
   onQuestComplete,
   affinityBoostNonce = 0,
+  userId = null,
+  missionId = null,
+  missionText = null,
+  missionSensorKind = "camera_environment",
+  missionSensorLabel = null,
+  isChapterLocked = false,
+  hardwareAffinityScore = null,
+  hardwareStatusTag = null,
+  onMissionVerified,
 }: {
   world: StoryWorld;
   character: StoryCharacter;
@@ -2745,6 +2795,17 @@ function ChatScreen({
   questCompleteError: string | null;
   onQuestComplete: (verification: string) => Promise<void>;
   affinityBoostNonce?: number;
+  userId?: string | null;
+  missionId?: string | null;
+  missionText?: string | null;
+  missionSensorKind?: HardwareSensorKind;
+  missionSensorLabel?: string | null;
+  isChapterLocked?: boolean;
+  hardwareAffinityScore?: number | null;
+  hardwareStatusTag?: HardwareStatusTag | null;
+  onMissionVerified?: (
+    payload: MissionGateSuccessPayload,
+  ) => void | Promise<void>;
 }): ReactNode {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -2758,21 +2819,69 @@ function ChatScreen({
   const [pendingReaction, setPendingReaction] = useState<string | null>(null);
   const [savedMemories, setSavedMemories] = useState<string[]>([]);
   const [memorySaved, setMemorySaved] = useState(false);
-  const [showQuestVerification, setShowQuestVerification] = useState(false);
-  const [questVerificationInput, setQuestVerificationInput] = useState("");
+  const [energyLevel, setEnergyLevel] = useState<EnergyLevel | null>(null);
   const prevUserMessageCountRef = useRef(0);
 
   const isQuestHydrationHold =
     !questSessionLoaded && activeStoryId.startsWith("quest:");
   const isQuestLocked =
-    isQuestHydrationHold || (questSessionLoaded && questStatus === "PENDING");
+    isChapterLocked ||
+    isQuestHydrationHold ||
+    (questSessionLoaded && questStatus === "PENDING");
+
+  const showHardwareMissionGate =
+    isQuestLocked &&
+    Boolean(userId && missionId && missionText) &&
+    !isInitializingGreeting;
+
+  const showEnergyCheckIn = showHardwareMissionGate && energyLevel === null;
+
+  const resolvedGateMission = ((): {
+    missionId: string;
+    missionText: string;
+    sensorKind: HardwareSensorKind;
+    sensorLabel: string;
+  } | null => {
+    if (!showHardwareMissionGate || !missionId || !missionText || energyLevel === null) {
+      return null;
+    }
+    if (isLowEnergy(energyLevel)) {
+      return {
+        missionId: RECOVERY_SYNC_MISSION.id,
+        missionText: RECOVERY_SYNC_MISSION.missionText,
+        sensorKind: RECOVERY_SYNC_MISSION.sensorKind,
+        sensorLabel: RECOVERY_SYNC_MISSION.sensorLabel,
+      };
+    }
+    return {
+      missionId,
+      missionText,
+      sensorKind: missionSensorKind,
+      sensorLabel: missionSensorLabel ?? "Hardware Proof",
+    };
+  })();
 
   useEffect(() => {
-    if (questStatus !== "PENDING") {
-      setShowQuestVerification(false);
-      setQuestVerificationInput("");
-    }
-  }, [questStatus]);
+    // Reset check-in whenever a new hardware lock deploys.
+    setEnergyLevel(null);
+  }, [missionId]);
+
+  const handleEnergySelect = useCallback(
+    (level: EnergyLevel): void => {
+      setEnergyLevel(level);
+      if (userId) {
+        void submitEmpathyCheckIn({
+          userId,
+          energyLevel: level,
+          empathyMode: isLowEnergy(level) ? "RECOVERY" : "STANDARD",
+          note: `CHECKIN:E${level}:${missionId ?? "unknown"}`,
+        }).catch((error) => {
+          console.warn("[velvet/empathy] check-in log failed:", error);
+        });
+      }
+    },
+    [missionId, userId],
+  );
 
   useEffect(() => {
     if (affinityBoostNonce > 0) {
@@ -2990,7 +3099,12 @@ function ChatScreen({
               <span className="text-[11px] text-[#4ade80]/90">Active</span>
             </div>
             <div className="mt-2 w-full max-w-[220px]">
-              <AffinityEngine trust={trust} flashing={affinityFlashing} />
+              <AffinityEngine
+                trust={trust}
+                flashing={affinityFlashing}
+                affinityPercentOverride={hardwareAffinityScore}
+                statusTag={hardwareStatusTag}
+              />
             </div>
           </div>
 
@@ -3075,62 +3189,34 @@ function ChatScreen({
           {awaitingCharacterReply && !isInitializingGreeting && (
             <TypingIndicator />
           )}
-          {questSessionLoaded && questStatus === "PENDING" && (
+          {questSessionLoaded &&
+            questStatus === "PENDING" &&
+            !showHardwareMissionGate && (
             <div className="mt-4 pb-2">
-              {!showQuestVerification ? (
-                <button
-                  type="button"
-                  onClick={() => setShowQuestVerification(true)}
-                  disabled={isSubmittingQuest || isInitializingGreeting}
-                  className="btn-gold-gradient w-full rounded-2xl px-5 py-3.5 font-serif-display text-[13px] font-semibold uppercase tracking-[0.12em] text-[#2a1f08] shadow-[0_0_30px_rgba(212,175,55,0.25)] transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  REPORT QUEST COMPLETE 📸
-                </button>
-              ) : (
-                <div className="rounded-2xl border border-[#D4AF37]/25 bg-[#0D0C14]/90 p-4">
-                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#D4AF37]/70">
-                    Roleplay Verification
-                  </p>
-                  <textarea
-                    value={questVerificationInput}
-                    onChange={(event) => setQuestVerificationInput(event.target.value)}
-                    disabled={isSubmittingQuest}
-                    placeholder="Describe what you completed in character — proof of execution..."
-                    rows={3}
-                    className="w-full resize-none rounded-xl border border-[#9b59f0]/20 bg-[#12111A]/80 px-3 py-2.5 text-[13px] text-white placeholder:text-[#6b6280] outline-none transition-colors focus:border-[#9b59f0]/50 disabled:cursor-not-allowed disabled:opacity-50"
-                    aria-label="Quest completion verification"
-                  />
-                  {questCompleteError && (
-                    <p className="mt-2 text-[11px] text-[#e8476a]">{questCompleteError}</p>
-                  )}
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowQuestVerification(false);
-                        setQuestVerificationInput("");
-                      }}
-                      disabled={isSubmittingQuest}
-                      className="flex-1 rounded-full border border-white/10 px-4 py-2 text-[12px] text-[#8a8a8a] hover:text-white disabled:opacity-40"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void onQuestComplete(questVerificationInput);
-                      }}
-                      disabled={
-                        isSubmittingQuest ||
-                        questVerificationInput.trim().length < 12
-                      }
-                      className="send-purple-glow flex-1 rounded-full px-4 py-2 text-[12px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      {isSubmittingQuest ? "Validating..." : "Submit Proof"}
-                    </button>
-                  </div>
-                </div>
-              )}
+              <div className="rounded-2xl border border-[#9b59f0]/30 bg-[#12081f]/90 p-4">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#b87dff]">
+                  Hardware Lock Active
+                </p>
+                <p className="text-[12px] leading-relaxed text-[#cfc6e0]">
+                  Sign in and load a quest line to open The Watcher camera HUD.
+                </p>
+                {questCompleteError && (
+                  <p className="mt-2 text-[11px] text-[#e8476a]">{questCompleteError}</p>
+                )}
+                {!isSubmittingQuest && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void onQuestComplete(
+                        "Manual override proof — mission executed in real life.",
+                      );
+                    }}
+                    className="mt-3 w-full rounded-full border border-[#9b59f0]/40 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#d9bcff]"
+                  >
+                    Fallback Text Proof
+                  </button>
+                )}
+              </div>
             </div>
           )}
           {choicesActive && (
@@ -3159,7 +3245,7 @@ function ChatScreen({
       {!(choicesActive && !isFreePlay) && (
       <div
         className={`relative z-[4] shrink-0 border-t border-[#9b59f0]/15 backdrop-blur-md ${
-          isLocked
+          isLocked || showHardwareMissionGate
             ? "bg-black/85 backdrop-blur-xl"
             : "bg-[#0a0810]/95"
         } ${hasBottomNav ? "pb-20" : "pb-6"}`}
@@ -3172,6 +3258,69 @@ function ChatScreen({
               Bypass the vault above to continue
             </p>
             <span className="inline-block h-2 w-2 rounded-full bg-[#D4AF37] opacity-60 shadow-[0_0_8px_#D4AF37] animate-pulse" />
+          </div>
+        ) : showHardwareMissionGate ? (
+          <div className="px-3 py-3">
+            <div className="mb-2 flex items-center justify-center gap-2">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#9b59f0] shadow-[0_0_8px_#9b59f0] animate-pulse" />
+              <p className="text-[10px] uppercase tracking-[0.24em] text-[#b87dff]/80">
+                Chat locked — hardware proof required
+              </p>
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#9b59f0] shadow-[0_0_8px_#9b59f0] animate-pulse" />
+            </div>
+
+            {showEnergyCheckIn ? (
+              <section
+                className="relative overflow-hidden rounded-2xl border border-[#9b59f0]/45 bg-[#07040f]/95 px-4 py-5 shadow-[0_0_40px_rgba(155,89,240,0.28)]"
+                aria-label="Human check-in overlay"
+              >
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(155,89,240,0.18),transparent_55%)]" />
+                <div className="relative z-[1] space-y-4">
+                  <div>
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-[#b87dff]">
+                      The Watcher // Human Check-In
+                    </p>
+                    <p className="mt-2 text-[15px] font-medium leading-snug text-white">
+                      Rate your current focus node energy (1-5)
+                    </p>
+                    <p className="mt-1 text-[12px] leading-relaxed text-[#9a90b0]">
+                      Low energy auto-routes to Recovery Sync — no guilt, no wall.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-5 gap-2">
+                    {([1, 2, 3, 4, 5] as const).map((level) => (
+                      <button
+                        key={level}
+                        type="button"
+                        onClick={() => {
+                          handleEnergySelect(level);
+                        }}
+                        className="aspect-square rounded-xl border border-[#9b59f0]/45 bg-[#12081f] text-[16px] font-bold text-[#f0e7ff] transition-transform active:scale-95 hover:border-[#b87dff] hover:bg-[#9b59f0]/20"
+                        aria-label={`Energy level ${level}`}
+                      >
+                        {level}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-center text-[10px] uppercase tracking-[0.18em] text-[#6f6685]">
+                    1 exhausted · 5 locked in
+                  </p>
+                </div>
+              </section>
+            ) : resolvedGateMission ? (
+              <MissionGate
+                userId={userId!}
+                missionId={resolvedGateMission.missionId}
+                missionText={resolvedGateMission.missionText}
+                sensorKind={resolvedGateMission.sensorKind}
+                sensorLabel={resolvedGateMission.sensorLabel}
+                energyLevel={energyLevel}
+                onSuccess={async (payload) => {
+                  setEnergyLevel(null);
+                  await onMissionVerified?.(payload);
+                }}
+              />
+            ) : null}
           </div>
         ) : (
           <>
@@ -3366,6 +3515,24 @@ export default function HomePage(): ReactNode {
   const [questCompleteError, setQuestCompleteError] = useState<string | null>(null);
   const [affinityBoostNonce, setAffinityBoostNonce] = useState(0);
   const [questProgressRefreshNonce, setQuestProgressRefreshNonce] = useState(0);
+  const [hardwareAffinityScore, setHardwareAffinityScore] = useState<
+    number | null
+  >(null);
+  const [hardwareStatusTag, setHardwareStatusTag] =
+    useState<HardwareStatusTag | null>(null);
+  const [hardwareArcProgress, setHardwareArcProgress] = useState<number | null>(
+    null,
+  );
+  const [isChapterLocked, setIsChapterLocked] = useState(false);
+  const [hardwareMissionIndex, setHardwareMissionIndex] = useState(0);
+  const [activeHardwareMission, setActiveHardwareMission] =
+    useState<HardwareMission | null>(null);
+  const [missionSequenceOrder, setMissionSequenceOrder] = useState(0);
+  const [narrativeBeatsSinceUnlock, setNarrativeBeatsSinceUnlock] = useState(0);
+  const [cliffhangerThreshold, setCliffhangerThreshold] = useState(() =>
+    rollCliffhangerThreshold(),
+  );
+  const [isGeneratingStoryNode, setIsGeneratingStoryNode] = useState(false);
   const [themeRipple, setThemeRipple] = useState<
     (ThemeToggleOrigin & { targetTheme: AppTheme }) | null
   >(null);
@@ -3380,6 +3547,12 @@ export default function HomePage(): ReactNode {
   const userIdRef = useRef<string | null>(null);
   const navigationHydratedRef = useRef(false);
   const skipNavigationPersistRef = useRef(false);
+  const cliffhangerThresholdRef = useRef(cliffhangerThreshold);
+  const narrativeBeatsRef = useRef(0);
+  const hardwareMissionIndexRef = useRef(0);
+  const missionSequenceOrderRef = useRef(0);
+  const cliffhangerArmedRef = useRef(true);
+  const cliffhangerInFlightRef = useRef(false);
 
   const userId = user?.id ?? null;
   const isAuthenticated = Boolean(session && userId);
@@ -3523,6 +3696,20 @@ export default function HomePage(): ReactNode {
           }
           return session.questStatus;
         });
+        if (session.questStatus === "PENDING") {
+          setActiveHardwareMission((current) => {
+            if (current) {
+              return current;
+            }
+            return getHardwareMissionByIndex(hardwareMissionIndexRef.current);
+          });
+          cliffhangerArmedRef.current = false;
+        } else if (
+          session.questStatus === "UNLOCKED" ||
+          session.questStatus === "COMPLETED"
+        ) {
+          cliffhangerArmedRef.current = true;
+        }
       } catch {
         if (cancelled) {
           return;
@@ -3961,6 +4148,28 @@ export default function HomePage(): ReactNode {
           if (result.questMission) {
             setQuestStatus(result.questStatus ?? "PENDING");
             setQuestSessionLoaded(true);
+            cliffhangerArmedRef.current = false;
+            setNarrativeBeatsSinceUnlock(0);
+            narrativeBeatsRef.current = 0;
+
+            void (async () => {
+              try {
+                const poolMission = await fetchNextPoolMission({
+                  worldId: selectedWorldId,
+                  afterSequence: 0,
+                });
+                setMissionSequenceOrder(poolMission.sequenceOrder);
+                missionSequenceOrderRef.current = poolMission.sequenceOrder;
+                setActiveHardwareMission(mapPoolMissionToHardware(poolMission));
+              } catch {
+                const starter = getHardwareMissionByIndex(0);
+                setHardwareMissionIndex(0);
+                hardwareMissionIndexRef.current = 0;
+                setMissionSequenceOrder(1);
+                missionSequenceOrderRef.current = 1;
+                setActiveHardwareMission(starter);
+              }
+            })();
           }
           writeLastSeenAt(selectedWorldId, selectedCharacterId, activeStoryId);
           return;
@@ -4077,6 +4286,7 @@ export default function HomePage(): ReactNode {
         });
 
         setQuestStatus(result.questStatus);
+        setIsChapterLocked(false);
         setTrust(result.relationshipVector.trust);
         setAffinityBoostNonce((previous) => previous + 1);
         setQuestProgressRefreshNonce((previous) => previous + 1);
@@ -4124,6 +4334,273 @@ export default function HomePage(): ReactNode {
       isSubmittingQuest,
       selectedCharacterId,
       selectedWorldId,
+      userId,
+    ],
+  );
+
+  const activeMissionLineId =
+    activeQuestLineId ?? parseQuestLineStoryId(activeStoryId);
+  const activeMissionDefinition = activeMissionLineId
+    ? getQuestLineDefinition(activeMissionLineId)
+    : null;
+
+  const resolvedHardwareMission =
+    activeHardwareMission ??
+    (questStatus === "PENDING"
+      ? getHardwareMissionByIndex(hardwareMissionIndex)
+      : null);
+
+  const activeMissionId =
+    resolvedHardwareMission?.id ?? activeMissionDefinition?.questLineId ?? null;
+  const activeMissionText =
+    resolvedHardwareMission?.missionText ??
+    activeMissionDefinition?.missionBlock ??
+    null;
+  const activeMissionSensorKind: HardwareSensorKind =
+    resolvedHardwareMission?.sensorKind ?? "camera_environment";
+  const activeMissionSensorLabel =
+    resolvedHardwareMission?.sensorLabel ?? null;
+
+  useEffect(() => {
+    cliffhangerThresholdRef.current = cliffhangerThreshold;
+  }, [cliffhangerThreshold]);
+
+  useEffect(() => {
+    narrativeBeatsRef.current = narrativeBeatsSinceUnlock;
+  }, [narrativeBeatsSinceUnlock]);
+
+  useEffect(() => {
+    hardwareMissionIndexRef.current = hardwareMissionIndex;
+  }, [hardwareMissionIndex]);
+
+  useEffect(() => {
+    missionSequenceOrderRef.current = missionSequenceOrder;
+  }, [missionSequenceOrder]);
+
+  useEffect(() => {
+    setIsChapterLocked(questStatus === "PENDING");
+  }, [questStatus]);
+
+  const mapPoolMissionToHardware = useCallback(
+    (pool: {
+      id: string;
+      missionText: string;
+      sensorType: string;
+      sequenceOrder: number;
+    }): HardwareMission => {
+      const sensorLabel =
+        pool.sensorType === "LIGHT_SENSOR"
+          ? "Light Sensor — Environmental Dark Mode"
+          : pool.sensorType === "GYROSCOPE"
+            ? "Gyroscope — Focus Mode"
+            : "Camera Vision — Hardware Proof";
+
+      return {
+        id: pool.id,
+        title: `Mission ${pool.sequenceOrder}`,
+        sensorKind:
+          pool.sensorType === "LIGHT_SENSOR"
+            ? "light_night"
+            : pool.sensorType === "GYROSCOPE"
+              ? "gyro_focus"
+              : "camera_environment",
+        sensorLabel,
+        missionText: pool.missionText,
+        validationOpener: DEFAULT_VALIDATION_OPENER,
+      };
+    },
+    [],
+  );
+
+  const streamStoryNodeMessages = useCallback(
+    async (lines: string[]): Promise<void> => {
+      setShowTypingIndicator(true);
+      for (let index = 0; index < lines.length; index += 1) {
+        const line = lines[index]!;
+        await new Promise<void>((resolve) => {
+          window.setTimeout(() => {
+            setMessages((previous) => [
+              ...previous,
+              {
+                id: createMessageId(),
+                role: "assistant",
+                content: line,
+              },
+            ]);
+            resolve();
+          }, index === 0 ? GREETING_TYPING_DELAY_MS : 520);
+        });
+      }
+      setShowTypingIndicator(false);
+    },
+    [],
+  );
+
+  const triggerHardwareCliffhanger = useCallback(async (): Promise<void> => {
+    if (questStatusRef.current === "PENDING" || cliffhangerInFlightRef.current) {
+      return;
+    }
+    cliffhangerInFlightRef.current = true;
+
+    try {
+      let nextMission: HardwareMission;
+      let nextSequence = missionSequenceOrderRef.current;
+
+      try {
+        const poolMission = await fetchNextPoolMission({
+          worldId: selectedWorldId,
+          worldType: selectedWorldId
+            ? getWorldById(selectedWorldId)?.name
+            : undefined,
+          afterSequence: missionSequenceOrderRef.current,
+        });
+        nextSequence = poolMission.sequenceOrder;
+        nextMission = mapPoolMissionToHardware(poolMission);
+      } catch (error) {
+        console.warn(
+          "[velvet/content-engine] pool fetch failed, using local fallback:",
+          error,
+        );
+        const nextIndex = getNextHardwareMissionIndex(
+          hardwareMissionIndexRef.current,
+        );
+        nextMission = getHardwareMissionByIndex(nextIndex);
+        setHardwareMissionIndex(nextIndex);
+        hardwareMissionIndexRef.current = nextIndex;
+        nextSequence = nextIndex + 1;
+      }
+
+      setMissionSequenceOrder(nextSequence);
+      missionSequenceOrderRef.current = nextSequence;
+      setActiveHardwareMission(nextMission);
+      setQuestStatus("PENDING");
+      setIsChapterLocked(true);
+      setNarrativeBeatsSinceUnlock(0);
+      narrativeBeatsRef.current = 0;
+      cliffhangerArmedRef.current = false;
+
+      const freezeTeaser: ChatMessage = {
+        id: createMessageId(),
+        role: "assistant",
+        content: `[ HARDWARE LOCK // ${nextMission.sensorLabel} ]\n${nextMission.missionText}`,
+      };
+      setMessages((previous) => [...previous, freezeTeaser]);
+      clearNarrativeOptions();
+    } finally {
+      cliffhangerInFlightRef.current = false;
+    }
+  }, [
+    clearNarrativeOptions,
+    mapPoolMissionToHardware,
+    selectedWorldId,
+  ]);
+
+  const handleMissionVerified = useCallback(
+    async (payload: MissionGateSuccessPayload): Promise<void> => {
+      const mission =
+        activeHardwareMission ??
+        getHardwareMissionByIndex(hardwareMissionIndexRef.current);
+
+      setHardwareAffinityScore(payload.affinityScore);
+      setHardwareStatusTag(payload.statusTag);
+      setHardwareArcProgress(payload.arcProgress);
+      setQuestStatus("COMPLETED");
+      setIsChapterLocked(false);
+      setActiveHardwareMission(null);
+      setAffinityBoostNonce((previous) => previous + 1);
+      setQuestProgressRefreshNonce((previous) => previous + 1);
+      setIsGeneratingStoryNode(true);
+      setShowTypingIndicator(true);
+
+      const nextThreshold = rollCliffhangerThreshold();
+      setCliffhangerThreshold(nextThreshold);
+      cliffhangerThresholdRef.current = nextThreshold;
+      setNarrativeBeatsSinceUnlock(0);
+      narrativeBeatsRef.current = 0;
+      cliffhangerArmedRef.current = false;
+
+      const mappedTrust = Math.max(
+        -1,
+        Math.min(1, payload.affinityScore / 50 - 1),
+      );
+      setTrust(mappedTrust);
+
+      const worldName =
+        selectedWorldId != null
+          ? getWorldById(selectedWorldId)?.name
+          : "Horror Mystery";
+      const characterName =
+        selectedCharacterId != null
+          ? getCharacterById(selectedCharacterId)?.name
+          : "The Watcher";
+
+      let storyLines: string[] = [];
+      let shouldDeployNextMission = true;
+      try {
+        if (!userId) {
+          throw new Error("Missing user for story node generation.");
+        }
+        const node = await generateStoryNode({
+          userId,
+          missionText: mission.missionText,
+          watcherFeedback: payload.feedback,
+          characterName: characterName ?? "The Watcher",
+          worldType: worldName ?? "Horror Mystery",
+          arcId: "arc_1",
+          sequenceOrder: missionSequenceOrderRef.current || undefined,
+          arcProgress: payload.arcProgress,
+          affinityScore: payload.affinityScore,
+          statusTag: payload.statusTag,
+        });
+        storyLines = node.messages;
+        // Chapter 3 ends the first-session arc — hold MissionGate until tomorrow sync.
+        if (node.nextMissionSequence === null && node.source === "seed") {
+          shouldDeployNextMission = false;
+        }
+      } catch (error) {
+        console.warn("[velvet/content-engine] story node failed:", error);
+        storyLines = [
+          payload.feedback,
+          mission.validationOpener || DEFAULT_VALIDATION_OPENER,
+          "Channel restored. Proof accepted. The next story node begins now.",
+          "Stay sharp — something on the other side of the glass just shifted.",
+          "Do not look away. The next lock is already listening.",
+        ];
+      } finally {
+        setIsGeneratingStoryNode(false);
+      }
+
+      await streamStoryNodeMessages(storyLines);
+
+      setQuestStatus("UNLOCKED");
+      cliffhangerArmedRef.current = shouldDeployNextMission;
+      if (shouldDeployNextMission) {
+        window.setTimeout(() => {
+          void triggerHardwareCliffhanger();
+        }, 900);
+      }
+
+      track("first_message_loaded", {
+        source: "quest_narrative",
+        characterId: selectedCharacterId ?? undefined,
+        worldId: selectedWorldId ?? undefined,
+      });
+
+      if (selectedCharacterId != null && selectedWorldId != null) {
+        track("quest_mission_completed", {
+          characterId: selectedCharacterId,
+          worldId: selectedWorldId,
+          xpAwarded: 10,
+          missionIndex: missionSequenceOrderRef.current || 1,
+        });
+      }
+    },
+    [
+      activeHardwareMission,
+      selectedCharacterId,
+      selectedWorldId,
+      streamStoryNodeMessages,
+      triggerHardwareCliffhanger,
       userId,
     ],
   );
@@ -4273,6 +4750,21 @@ export default function HomePage(): ReactNode {
                     : message,
                 ),
               );
+
+              const status = questStatusRef.current;
+              if (
+                cliffhangerArmedRef.current &&
+                (status === "UNLOCKED" || status === "COMPLETED" || status === "NONE")
+              ) {
+                const nextBeats = narrativeBeatsRef.current + 1;
+                narrativeBeatsRef.current = nextBeats;
+                setNarrativeBeatsSinceUnlock(nextBeats);
+                if (nextBeats >= cliffhangerThresholdRef.current) {
+                  window.setTimeout(() => {
+                    void triggerHardwareCliffhanger();
+                  }, 420);
+                }
+              }
             },
             onOptions: (optionSuggestions) => {
               if (
@@ -4324,6 +4816,7 @@ export default function HomePage(): ReactNode {
       selectedCharacterId,
       selectedWorldId,
       showTypingIndicator,
+      triggerHardwareCliffhanger,
     ],
   );
 
@@ -4849,7 +5342,7 @@ export default function HomePage(): ReactNode {
                 inputValue={inputValue}
                 isStreaming={isStreaming}
                 isInitializingGreeting={isInitializingGreeting}
-                showTypingIndicator={showTypingIndicator}
+                showTypingIndicator={showTypingIndicator || isGeneratingStoryNode}
                 narrativeOptions={suggestions}
                 showNarrativeOptions={showSuggestions}
                 trust={trust}
@@ -4885,6 +5378,15 @@ export default function HomePage(): ReactNode {
                 questCompleteError={questCompleteError}
                 onQuestComplete={handleQuestComplete}
                 affinityBoostNonce={affinityBoostNonce}
+                userId={userId}
+                missionId={activeMissionId}
+                missionText={activeMissionText}
+                missionSensorKind={activeMissionSensorKind}
+                missionSensorLabel={activeMissionSensorLabel}
+                isChapterLocked={isChapterLocked}
+                hardwareAffinityScore={hardwareAffinityScore}
+                hardwareStatusTag={hardwareStatusTag}
+                onMissionVerified={handleMissionVerified}
               />
             </SpatialTabCharacterLayer>
             <SpatialTabSurfaceLayer tabId="world" currentTab={currentTab}>
@@ -4905,6 +5407,9 @@ export default function HomePage(): ReactNode {
                 userId={userId}
                 isTabActive={currentTab === "memories"}
                 progressRefreshNonce={questProgressRefreshNonce}
+                hardwareAffinityScore={hardwareAffinityScore}
+                hardwareStatusTag={hardwareStatusTag}
+                hardwareArcProgress={hardwareArcProgress}
               />
             </SpatialTabSurfaceLayer>
             <SpatialTabSurfaceLayer tabId="stories" currentTab={currentTab}>
@@ -4918,6 +5423,7 @@ export default function HomePage(): ReactNode {
                 trust={trust}
                 isTabActive={currentTab === "stories"}
                 progressRefreshNonce={questProgressRefreshNonce}
+                hardwareArcProgress={hardwareArcProgress}
                 onSwitchStory={handleSwitchStory}
               />
             </SpatialTabSurfaceLayer>

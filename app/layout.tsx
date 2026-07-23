@@ -31,17 +31,53 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Velvet.ai",
-  description: "Where relationships remember.",
-  manifest: "/manifest.webmanifest",
+  title: {
+    default: "Velvet.ai // Real-Life RPG",
+    template: "%s · Velvet.ai",
+  },
+  description:
+    "Hardware-verified AI companion for daily discipline and growth.",
+  applicationName: "Velvet.ai",
+  appleWebApp: {
+    capable: true,
+    title: "Velvet.ai",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: {
+    telephone: false,
+    email: false,
+    address: false,
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      {
+        url: "/icons/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  minimumScale: 1,
   userScalable: false,
   viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#a855f7" },
+    { media: "(prefers-color-scheme: light)", color: "#a855f7" },
+  ],
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
@@ -57,6 +93,13 @@ export default function RootLayout({
       className={`${playfair.variable} ${dmSans.variable} w-full h-full min-h-screen overflow-hidden overscroll-y-none select-none bg-black`}
     >
       <head>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent"
+        />
+        <meta name="apple-mobile-web-app-title" content="Velvet.ai" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         {runtimePublicEnv.supabaseUrl ? (
           <meta
             name="velvet:supabase-url"
@@ -75,7 +118,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="w-full h-full min-h-screen overflow-hidden overscroll-y-none select-none bg-black">
+      <body className="w-full h-full min-h-screen overflow-hidden overscroll-y-none select-none touch-manipulation bg-black">
         <PostHogProvider>{children}</PostHogProvider>
       </body>
     </html>

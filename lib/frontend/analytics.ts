@@ -83,6 +83,43 @@ export function track(
   },
 ): void;
 export function track(
+  name: "mission_submission_attempt",
+  properties: {
+    missionId: string;
+    userId: string;
+    missionTextPreview?: string;
+  },
+): void;
+export function track(
+  name: "mission_verified",
+  properties: {
+    status: "success" | "failed";
+    score_impact: number;
+    missionId?: string;
+    arcProgress?: number;
+    affinityScore?: number;
+    statusTag?: string;
+    reason?: string;
+  },
+): void;
+export function track(
+  name: "progress_shared_progress",
+  properties: {
+    current_affinity: number;
+    statusTag?: string;
+    arcProgress?: number;
+  },
+): void;
+export function track(
+  name: "user_licked_share_progress",
+  properties: {
+    affinity: number;
+    status_tag: string;
+    missionTitle?: string;
+    arcProgress?: number;
+  },
+): void;
+export function track(
   name: string,
   properties: Record<string, unknown>,
 ): void {

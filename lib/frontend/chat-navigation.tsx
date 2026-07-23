@@ -36,6 +36,10 @@ import {
   type CampaignProgressResponse,
 } from "@/lib/frontend/quest-campaign-progress";
 import { track } from "@/lib/frontend/analytics";
+import {
+  ShareCard,
+  useLatestCodexCard,
+} from "@/app/components/ShareCard";
 
 export const SPATIAL_TAB_EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 export const SPATIAL_TAB_DURATION_MS = 550;
@@ -471,12 +475,19 @@ function resolveRelationshipStatus(
   percent: number,
   trust: number,
   conversationId: number | null,
+  hardwareStatusTag?: "TOXIC ATTRACTION" | "RESPECT" | null,
 ): string {
+  if (hardwareStatusTag === "RESPECT") {
+    return "RESPECT";
+  }
+  if (hardwareStatusTag === "TOXIC ATTRACTION") {
+    return "TOXIC ATTRACTION";
+  }
   if (percent >= 80) {
     return "CONFESSION IMMINENT";
   }
   if (percent >= 60) {
-    return "UNRAVELING CONTROL";
+    return "RESPECT";
   }
   if (percent >= 40) {
     const stablePick =
@@ -705,6 +716,9 @@ interface MemoriesVaultProps {
   userId: string | null;
   isTabActive?: boolean;
   progressRefreshNonce?: number;
+  hardwareAffinityScore?: number | null;
+  hardwareStatusTag?: "TOXIC ATTRACTION" | "RESPECT" | null;
+  hardwareArcProgress?: number | null;
 }
 
 export function MemoriesVaultTab(props: Partial<MemoriesVaultProps>): ReactNode {
@@ -735,6 +749,9 @@ export function MemoriesVaultTab(props: Partial<MemoriesVaultProps>): ReactNode 
       userId={props.userId ?? null}
       isTabActive={props.isTabActive ?? false}
       progressRefreshNonce={props.progressRefreshNonce ?? 0}
+      hardwareAffinityScore={props.hardwareAffinityScore ?? null}
+      hardwareStatusTag={props.hardwareStatusTag ?? null}
+      hardwareArcProgress={props.hardwareArcProgress ?? null}
     />
   );
 }
@@ -749,6 +766,9 @@ function MemoriesVaultContent({
   userId,
   isTabActive,
   progressRefreshNonce,
+  hardwareAffinityScore = null,
+  hardwareStatusTag = null,
+  hardwareArcProgress = null,
 }: MemoriesVaultProps): ReactNode {
   const firstName = character.name.split(" ")[0] ?? character.name;
 
@@ -759,11 +779,18 @@ function MemoriesVaultContent({
 
   const clientAffinityPercent = trustToPercent(trust);
   const affinityPercent =
-    progressLoaded && questProgress?.affinityPercent != null
-      ? questProgress.affinityPercent
-      : clientAffinityPercent;
+    hardwareAffinityScore != null
+      ? Math.round(hardwareAffinityScore)
+      : progressLoaded && questProgress?.affinityPercent != null
+        ? questProgress.affinityPercent
+        : clientAffinityPercent;
   const relationshipStatus = formatRelationshipStatusLabel(
-    resolveRelationshipStatus(affinityPercent, trust, conversationId),
+    resolveRelationshipStatus(
+      affinityPercent,
+      trust,
+      conversationId,
+      hardwareStatusTag,
+    ),
   );
 
   const defaultThought =
@@ -857,6 +884,8 @@ function MemoriesVaultContent({
     triggerNeuralHaptic();
   }, []);
 
+  const latestCodex = useLatestCodexCard(userId, progressRefreshNonce);
+
   return (
     <div className="mx-auto flex h-full min-h-0 w-full max-w-lg flex-col bg-[#030208] font-sans">
       <ViewportScrollBody className="p-4">
@@ -870,6 +899,11 @@ function MemoriesVaultContent({
           <p className="mind-scanner-status-badge animate-pulse text-xs font-extrabold text-[#A855F7] tracking-[0.15em] text-center uppercase py-1 px-4 border border-[#A855F7]/30 rounded-full mt-2">
             [ 🖤 {relationshipStatus} ]
           </p>
+          {hardwareArcProgress != null && (
+            <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#b87dff]/85">
+              ARC PROGRESS {Math.round(hardwareArcProgress)}%
+            </p>
+          )}
         </header>
 
         <div className="mt-4 flex w-full flex-col items-center gap-4">
@@ -886,6 +920,13 @@ function MemoriesVaultContent({
             secretNarrative={secretNarrative}
             verifiedQuestCount={verifiedQuestCount}
             onPress={handleCardPress}
+          />
+          <ShareCard
+            affinityPercent={affinityPercent}
+            statusTag={relationshipStatus}
+            missionTitle={latestCodex.title}
+            missionDescription={latestCodex.description}
+            arcProgress={hardwareArcProgress}
           />
         </div>
       </ViewportScrollBody>
@@ -1031,6 +1072,7 @@ export function StoriesTimelineTab({
   trust,
   isTabActive = false,
   progressRefreshNonce = 0,
+  hardwareArcProgress = null,
   onSwitchStory,
 }: {
   character: StoryCharacter;
@@ -1042,6 +1084,7 @@ export function StoriesTimelineTab({
   trust: number;
   isTabActive?: boolean;
   progressRefreshNonce?: number;
+  hardwareArcProgress?: number | null;
   onSwitchStory: (storyId: string) => void;
 }): ReactNode {
   const stories = getCharacterStories(character.id);
@@ -1226,18 +1269,23 @@ export function StoriesTimelineTab({
             const isUnlocked = hasChatted
               ? (arcProgress?.unlocked ?? index === 0)
               : false;
+            const isActiveRow = isRowActive(story.story_id);
+            const displayProgress =
+              isActiveRow && hardwareArcProgress != null
+                ? Math.round(hardwareArcProgress)
+                : (arcProgress?.progressPercent ?? 0);
 
             return (
               <StoryTimelineRow
                 key={story.story_id}
                 story={story}
                 arcIndex={index}
-                isActive={isRowActive(story.story_id)}
-                isUnlocked={isUnlocked}
-                progressPercent={arcProgress?.progressPercent ?? 0}
+                isActive={isActiveRow}
+                isUnlocked={isUnlocked || (isActiveRow && hardwareArcProgress != null && hardwareArcProgress >= 25)}
+                progressPercent={displayProgress}
                 syncingActiveNode={
                   isSyncingCampaign ||
-                  (isRowActive(story.story_id) &&
+                  (isActiveRow &&
                     (campaignProgress?.syncingActiveNode ?? false))
                 }
                 requiredAffinityPercent={arcProgress?.requiredAffinityPercent ?? 65}

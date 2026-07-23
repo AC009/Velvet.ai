@@ -1,0 +1,2 @@
+icon-192.png: exists=true size=557 bytes
+apple-touch-icon.png: exists=true size=507 bytes

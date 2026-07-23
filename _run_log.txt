@@ -1,0 +1,8 @@
+OK: node scripts/generate-pwa-icons.mjs
+wrote icon-192.png (192x192) sha256:f1f1c8be6c9c
+wrote icon-512.png (512x512) sha256:43275ce19a36
+wrote apple-touch-icon.png (180x180) sha256:e7a3005f2043
+PWA icons ready in public/icons/
+
+iconsOk=true missing=none
+OK: npx tsc --noEmit

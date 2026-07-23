@@ -6,3 +6,10 @@ dist
 build
 .vercel
 .env*
+# next-pwa generated (rebuilt on production build)
+public/sw.js
+public/sw.js.map
+public/workbox-*.js
+public/workbox-*.js.map
+public/swe-worker-*.js
+public/fallback-*.js

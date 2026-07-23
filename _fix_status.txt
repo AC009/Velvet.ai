@@ -1,0 +1,54 @@
+﻿
+=== STEP 1: npm install ===
+npm : npm WARN EBADENGINE Unsupported engine {
+At C:\Users\ari20\AppData\Local\Temp\ps-script-210f86b1-0c36-473c-90a6-1049c2bf0a87.ps1:12 char:1
++ npm install 2>&1 | Tee-Object -Variable npmOut | Out-Null
++ ~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm WARN EBADENGINE Unsupported engine {:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+npm WARN EBADENGINE   package: 'eslint-visitor-keys@5.0.1',
+npm WARN EBADENGINE   required: { node: '^20.19.0 || ^22.13.0 || >=24' },
+npm WARN EBADENGINE   current: { node: 'v20.13.1', npm: '10.5.2' }
+npm WARN EBADENGINE }
+
+up to date, audited 626 packages in 4s
+
+160 packages are looking for funding
+  run `npm fund` for details
+
+10 vulnerabilities (1 low, 5 moderate, 4 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+exit_code: 0
+
+=== STEP 2: verify next-pwa ===
+package_json_exists: True
+{
+  "name": "@ducanh2912/next-pwa",
+  "version": "10.2.9",
+  "type": "module",
+  "private": false,
+  "description": "PWA for Next.js, powered by Workbox.",
+  "keywords": [
+    "nextjs",
+    "pwa",
+   
+
+=== STEP 3: npx tsc --noEmit ===
+app/components/MissionGate.tsx(256,15): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '"mission_verified"' is not assignable to parameter of type '"user_licked_share_progress"'.
+
+typecheck_exit_code: 2
+
+=== TYPECHECK FAILED - will need source fixes ===
+ALL_DONE_PARTIAL typecheck_failed
+READBACK_OK

@@ -1,0 +1,6 @@
+﻿
+> velvet-ai@1.0.0 typecheck
+> tsc --noEmit
+
+
+EXIT=0
