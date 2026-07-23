@@ -137,14 +137,6 @@ export async function POST(request: Request): Promise<Response> {
       worldId,
       storyId,
       characterId,
-      {
-        questmaster_id: characterId,
-        characterId,
-        character_id: characterId,
-        world_id: worldId,
-        worldId,
-        storyId,
-      },
     );
 
     const slimHistory = await fetchGlobalNarrativeHistory(worldId, 24);

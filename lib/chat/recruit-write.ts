@@ -248,14 +248,6 @@ async function safeCreateConversation(
       payloadWorldId,
       storyId,
       payloadQuestmasterId,
-      {
-        questmaster_id: payloadQuestmasterId,
-        characterId: payloadQuestmasterId,
-        character_id: payloadQuestmasterId,
-        world_id: payloadWorldId,
-        worldId: payloadWorldId,
-        storyId,
-      },
     );
   } catch (error) {
     console.warn(

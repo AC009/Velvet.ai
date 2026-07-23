@@ -204,14 +204,6 @@ export async function recruitActiveQuestmaster(
       input.worldId,
       storyId,
       input.characterId,
-      {
-        questmaster_id: input.characterId,
-        characterId: input.characterId,
-        character_id: input.characterId,
-        world_id: input.worldId,
-        worldId: input.worldId,
-        storyId,
-      },
     );
   } catch (error) {
     console.error(
