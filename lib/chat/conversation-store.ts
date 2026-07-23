@@ -451,3 +451,6 @@ export async function incrementPaymentIntentClicks(
 
   return nextCount;
 }
+
+export function resolveQuestmasterId(body: any): string { if (!body) return 'watcher'; const id = body.questmaster_id || body.characterId || body.character_id || body.id || body.questmasterId; return id && id !== 'null' && id !== 'undefined' ? String(id).trim() : 'watcher'; }
+export function resolveConversationWorldId(body: any): string { if (!body) return 'horror_mystery'; const world = body.world_id || body.worldId || body.world_type || body.genre; return world && world !== 'null' && world !== 'undefined' ? String(world).trim() : 'horror_mystery'; }

@@ -72,16 +72,31 @@ interface ParsedInitBody extends ChatInitRequestBody {
   dialogueBehavior?: ChatInitRequestBody["dialogueBehavior"];
 }
 
-function pickAlias(
-  body: Record<string, unknown>,
-  keys: string[],
-): unknown {
-  for (const key of keys) {
-    if (key in body && body[key] !== undefined && body[key] !== null) {
-      return body[key];
-    }
+function toQuestmasterNumericId(token: string): number {
+  const parsed = Number(token);
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return Math.floor(parsed);
   }
-  return undefined;
+  return 8; // watcher
+}
+
+function toWorldNumericId(token: string): number {
+  const parsed = Number(token);
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return Math.floor(parsed);
+  }
+  const normalized = token.toLowerCase().replace(/[\s-]+/g, "_");
+  if (
+    normalized.includes("horror") ||
+    normalized.includes("threshold") ||
+    normalized === "horror_mystery"
+  ) {
+    return 3;
+  }
+  if (normalized.includes("romance")) return 1;
+  if (normalized.includes("mafia")) return 2;
+  if (normalized.includes("school")) return 4;
+  return 3; // horror_mystery
 }
 
 function parseInitRequestBody(raw: unknown): ParsedInitBody {
@@ -91,30 +106,20 @@ function parseInitRequestBody(raw: unknown): ParsedInitBody {
 
   const body = raw as Record<string, unknown>;
 
-  const userIdRaw = pickAlias(body, ["userId", "user_id", "uid"]);
-  if (typeof userIdRaw !== "string" || !isValidUuid(userIdRaw)) {
+  const userIdRaw =
+    typeof body.userId === "string"
+      ? body.userId
+      : typeof body.user_id === "string"
+        ? body.user_id
+        : typeof body.uid === "string"
+          ? body.uid
+          : null;
+  if (!userIdRaw || !isValidUuid(userIdRaw)) {
     throw new Error("userId must be a valid UUID string.");
   }
 
-  const worldId = resolveConversationWorldId(
-    pickAlias(body, [
-      "worldId",
-      "world_id",
-      "world_type",
-      "worldType",
-      "genre",
-    ]),
-  );
-
-  const characterId = resolveQuestmasterId(
-    pickAlias(body, [
-      "questmaster_id",
-      "questmasterId",
-      "characterId",
-      "character_id",
-      "id",
-    ]),
-  );
+  const worldId = toWorldNumericId(resolveConversationWorldId(body));
+  const characterId = toQuestmasterNumericId(resolveQuestmasterId(body));
 
   const storyId =
     typeof body.storyId === "string" && body.storyId.trim().length > 0
@@ -240,14 +245,6 @@ export async function POST(request: Request): Promise<Response> {
       body.worldId,
       storyId,
       body.characterId,
-      {
-        questmaster_id: body.characterId,
-        characterId: body.characterId,
-        character_id: body.characterId,
-        world_id: body.worldId,
-        worldId: body.worldId,
-        storyId,
-      },
     );
 
     let character: Awaited<ReturnType<typeof getCharacter>>;

@@ -74,6 +74,33 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
+function toQuestmasterNumericId(token: string): number {
+  const parsed = Number(token);
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return Math.floor(parsed);
+  }
+  return 8;
+}
+
+function toWorldNumericId(token: string): number {
+  const parsed = Number(token);
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return Math.floor(parsed);
+  }
+  const normalized = token.toLowerCase().replace(/[\s-]+/g, "_");
+  if (
+    normalized.includes("horror") ||
+    normalized.includes("threshold") ||
+    normalized === "horror_mystery"
+  ) {
+    return 3;
+  }
+  if (normalized.includes("romance")) return 1;
+  if (normalized.includes("mafia")) return 2;
+  if (normalized.includes("school")) return 4;
+  return 3;
+}
+
 function parseRequestBody(raw: unknown): ChatRequestBody {
   if (!raw || typeof raw !== "object") {
     throw new Error("Request body must be a JSON object.");
@@ -91,16 +118,8 @@ function parseRequestBody(raw: unknown): ChatRequestBody {
     throw new Error("userId must be a valid UUID string.");
   }
 
-  const worldId = resolveConversationWorldId(
-    body.worldId ?? body.world_id ?? body.world_type ?? body.genre,
-  );
-  const characterId = resolveQuestmasterId(
-    body.questmaster_id ??
-      body.questmasterId ??
-      body.characterId ??
-      body.character_id ??
-      body.id,
-  );
+  const worldId = toWorldNumericId(resolveConversationWorldId(body));
+  const characterId = toQuestmasterNumericId(resolveQuestmasterId(body));
 
   if (typeof body.message !== "string") {
     throw new Error("message must be a string.");

@@ -16,6 +16,33 @@ interface UnlockIntentBody {
   characterId: number;
 }
 
+function toQuestmasterNumericId(token: string): number {
+  const parsed = Number(token);
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return Math.floor(parsed);
+  }
+  return 8; // watcher
+}
+
+function toWorldNumericId(token: string): number {
+  const parsed = Number(token);
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return Math.floor(parsed);
+  }
+  const normalized = token.toLowerCase().replace(/[\s-]+/g, "_");
+  if (
+    normalized.includes("horror") ||
+    normalized.includes("threshold") ||
+    normalized === "horror_mystery"
+  ) {
+    return 3;
+  }
+  if (normalized.includes("romance")) return 1;
+  if (normalized.includes("mafia")) return 2;
+  if (normalized.includes("school")) return 4;
+  return 3; // horror_mystery
+}
+
 function parseBody(raw: unknown): UnlockIntentBody {
   if (!raw || typeof raw !== "object") {
     throw new Error("Request body must be a JSON object.");
@@ -33,25 +60,10 @@ function parseBody(raw: unknown): UnlockIntentBody {
     throw new Error("userId must be a valid UUID string.");
   }
 
-  const payloadQuestmasterId =
-    body.questmaster_id ||
-    body.characterId ||
-    body.character_id ||
-    body.id ||
-    body.questmasterId ||
-    "watcher";
-
-  const payloadWorldId =
-    body.world_id ||
-    body.worldId ||
-    body.world_type ||
-    body.genre ||
-    "horror_mystery";
-
   return {
     userId,
-    worldId: resolveConversationWorldId(payloadWorldId, "horror_mystery"),
-    characterId: resolveQuestmasterId(payloadQuestmasterId, "watcher"),
+    worldId: toWorldNumericId(resolveConversationWorldId(body)),
+    characterId: toQuestmasterNumericId(resolveQuestmasterId(body)),
   };
 }
 
@@ -87,7 +99,6 @@ export async function POST(request: Request): Promise<Response> {
         },
       );
 
-      // Degraded stub (id 0) — still unlock UX without crashing.
       if (!conversation.id) {
         console.warn(
           "[velvet/chat/unlock-intent] degraded conversation stub — skipping lock mutation.",
