@@ -10,7 +10,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import { BookOpen, Eye, Heart, Shield, type LucideIcon } from "lucide-react";
+import { BookOpen, Eye, Shield, type LucideIcon } from "lucide-react";
 import {
   getCharacterById,
   getCharactersForWorld,
@@ -1225,10 +1225,36 @@ function ExecutiveBentoLoginGate({
 /* -------------------------------------------------------------------------- */
 
 const GENRE_WORLD_ICONS: Record<number, LucideIcon> = {
-  1: Heart,
+  1: Shield,
   2: Shield,
   3: Eye,
   4: BookOpen,
+};
+
+const UNIVERSE_HUD_COPY: Record<
+  number,
+  { title: string; subtitle: string; body: string }
+> = {
+  1: {
+    title: "SYNAPSE: CHARISMA",
+    subtitle: "PRIME YOUR PRESENCE",
+    body: "Real-world social exposure, friction training, and dominant charisma protocols. Unlock localized lore by stepping directly into the crowd.",
+  },
+  2: {
+    title: "CORPUS: IRON",
+    subtitle: "THE PHYSICAL DRILL",
+    body: "High-intensity physical failure, raw cold exposure, and pain tolerance thresholds. Shut down the inner voice and prove your absolute grit.",
+  },
+  3: {
+    title: "NEXUS: THRESHOLD",
+    subtitle: "BREAK COMFORT ZONES",
+    body: "Primal fear-facing, discomfort inoculation, and extreme cognitive distortion. Execute parameters to earn your next psychological horror beat.",
+  },
+  4: {
+    title: "LOGIC: MIND",
+    subtitle: "UPGRADE THE CORE",
+    body: "Deep-focus isolation, uncompromised cognitive momentum, and zero-procrastination deep study execution.",
+  },
 };
 
 function GenreWorldBentoTile({
@@ -1239,6 +1265,7 @@ function GenreWorldBentoTile({
   onSelect: () => void;
 }): ReactNode {
   const GenreIcon = GENRE_WORLD_ICONS[world.id] ?? BookOpen;
+  const hud = UNIVERSE_HUD_COPY[world.id];
 
   return (
     <button
@@ -1247,28 +1274,32 @@ function GenreWorldBentoTile({
         triggerHapticFeedback(12);
         onSelect();
       }}
-      className="group relative min-h-[160px] w-full overflow-hidden rounded-xl border border-zinc-800 bg-[#09090B] p-6 text-left transition-all duration-200 hover:border-zinc-700 active:scale-[0.97]"
-      aria-label={`Enter ${world.name} genre`}
+      className="group relative min-h-[160px] w-full overflow-hidden rounded-none border border-zinc-800/60 bg-black/90 p-6 text-left backdrop-blur-xl transition-all duration-200 hover:border-purple-500/80 hover:shadow-[0_0_20px_rgba(168,85,247,0.25)] active:scale-[0.97]"
+      aria-label={`Enter ${hud?.title ?? world.name} genre`}
     >
+      <div className="absolute right-4 top-4 flex items-center space-x-1.5 rounded border border-zinc-700/50 bg-zinc-900/90 px-2 py-0.5 font-mono text-[10px] text-purple-400">
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-purple-500" />
+        <span>SYS_ARMED</span>
+      </div>
       <GenreIcon
-        className="absolute right-5 top-5 h-5 w-5 text-zinc-500"
+        className="absolute bottom-5 right-5 h-5 w-5 text-zinc-600"
         strokeWidth={1.5}
         aria-hidden="true"
       />
       <div className="relative flex h-full flex-col justify-between pr-8">
         <div>
-          <span className="inline-block rounded-full border border-zinc-800 px-2.5 py-1 font-sans text-[10px] uppercase tracking-wider text-zinc-400">
-            {world.tagline}
+          <span className="inline-block border border-zinc-700/60 bg-zinc-950/80 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-cyan-400/90">
+            {hud?.subtitle ?? world.tagline}
           </span>
-          <h3 className="mt-3 font-sans text-xl font-bold uppercase tracking-wide text-white">
-            {world.name}
+          <h3 className="mt-3 font-mono text-xl font-bold uppercase tracking-wide text-white">
+            {hud?.title ?? world.name}
           </h3>
-          <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-            {world.description}
+          <p className="mt-2 font-mono text-sm leading-relaxed text-zinc-400">
+            {hud?.body ?? world.description}
           </p>
         </div>
-        <span className="mt-4 font-sans text-xs uppercase tracking-wider text-zinc-400 transition-colors group-hover:text-white">
-          Select Characters →
+        <span className="mt-4 font-mono text-xs uppercase tracking-wider text-zinc-500 transition-colors group-hover:text-purple-300">
+          LOCK TARGET →
         </span>
       </div>
     </button>
@@ -1584,73 +1615,61 @@ function WorldCard({
   selected: boolean;
   onSelect: (worldId: number) => void;
 }): ReactNode {
-  const theme = getWorldPortalTheme(world);
+  const hud = UNIVERSE_HUD_COPY[world.id] ?? {
+    title: world.name,
+    subtitle: world.tagline,
+    body: world.description,
+  };
 
   return (
     <button
       type="button"
       onClick={() => onSelect(world.id)}
-      className={`world-portal-card group relative flex h-full w-full flex-col justify-between rounded-2xl border bg-zinc-950/45 p-4 text-left backdrop-blur-md transition-all duration-300 active:scale-[0.98] ${
-        selected ? "world-portal-card--selected" : ""
+      className={`group relative flex h-full w-full flex-col overflow-hidden rounded-none border bg-black/90 p-4 text-left backdrop-blur-xl transition-all duration-300 active:scale-[0.98] ${
+        selected
+          ? "border-purple-500/80 shadow-[0_0_20px_rgba(168,85,247,0.25)]"
+          : "border-zinc-800/60 hover:border-purple-500/80 hover:shadow-[0_0_20px_rgba(168,85,247,0.25)]"
       }`}
-      style={{
-        borderColor: theme.border,
-        borderWidth: 1,
-        boxShadow: selected ? theme.glowShadowSelected : theme.glowShadow,
-        ["--portal-pulse-color" as string]: theme.pulseColor,
-      }}
       aria-pressed={selected}
-      aria-label={`Select ${world.name}`}
+      aria-label={`Select ${hud.title}`}
     >
-      <span
-        className="world-portal-aura pointer-events-none absolute -inset-1 rounded-[18px] opacity-50"
-        style={{
-          background: `radial-gradient(ellipse 80% 70% at 50% 50%, ${theme.aura} 0%, transparent 70%)`,
-        }}
-        aria-hidden="true"
-      />
-
       <div
-        className="absolute inset-0 bg-cover bg-center"
+        className="pointer-events-none absolute inset-0 opacity-40"
         style={{
           backgroundImage: `${world.imageOverlay}, ${world.imageGradient}`,
         }}
         aria-hidden="true"
       />
-
-      <div className="world-portal-glass absolute inset-0" aria-hidden="true" />
-
       <div
-        className="absolute inset-x-0 bottom-0 h-[58%] bg-gradient-to-t from-black via-black/40 to-transparent"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black via-black/80 to-black/40"
         aria-hidden="true"
       />
 
-      {selected && (
-        <span className="world-portal-pulse pointer-events-none absolute inset-0 z-[1] rounded-2xl" aria-hidden="true" />
-      )}
-      {selected && <CheckmarkBadge color={theme.badgeColor} glowColor={theme.neonText} />}
+      <div className="relative z-10 mb-3 flex items-start justify-between gap-2">
+        <span className="font-mono text-[9px] uppercase tracking-[0.28em] text-zinc-500">
+          VEC_{String(world.id).padStart(2, "0")}
+        </span>
+        <div className="flex items-center space-x-1.5 rounded border border-zinc-700/50 bg-zinc-900/90 px-2 py-0.5 font-mono text-[10px] text-purple-400">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-purple-500" />
+          <span>SYS_ARMED</span>
+        </div>
+      </div>
 
-      <div className="absolute inset-x-0 bottom-0 z-10 p-3">
-        <h3
-          className="font-serif-display flex items-center text-[14px] font-semibold text-white"
-          style={{ textShadow: `0 0 12px ${theme.neonText}88` }}
-        >
-          <span
-            className="mr-1.5 inline-block text-base"
-            style={{ filter: `drop-shadow(0 0 6px ${theme.neonText})` }}
-            aria-hidden="true"
-          >
-            {world.icon}
-          </span>
-          {world.name}
+      <div className="relative z-10 mt-auto flex flex-col gap-1.5">
+        <h3 className="font-mono text-[13px] font-bold uppercase tracking-[0.12em] text-white">
+          {hud.title}
         </h3>
-        <p
-          className="mt-0.5 text-[10px] uppercase tracking-wider"
-          style={{ color: `${theme.neonText}cc` }}
-        >
-          {world.tagline}
+        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-cyan-400/90">
+          {hud.subtitle}
         </p>
-        <p className="mt-1 text-[10px] leading-snug text-zinc-400">{world.description}</p>
+        <p className="font-mono text-[10px] leading-snug text-zinc-400">
+          {hud.body}
+        </p>
+        {selected && (
+          <span className="mt-1 font-mono text-[9px] uppercase tracking-[0.3em] text-purple-300">
+            TARGET_LOCKED
+          </span>
+        )}
       </div>
     </button>
   );
@@ -1671,16 +1690,16 @@ function WorldSelectionScreen({
         className="pointer-events-none absolute inset-x-0 top-0 h-40"
         style={{
           background:
-            "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(91, 37, 137, 0.2) 0%, transparent 70%)",
+            "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(91, 37, 137, 0.22) 0%, transparent 70%)",
         }}
         aria-hidden="true"
       />
-      <header className="relative shrink-0 text-center">
-        <h1 className="world-cinema-title font-serif-display text-xl font-bold uppercase tracking-[0.18em]">
-          Choose Your Story World
+      <header className="relative shrink-0 px-1 pb-4 text-center">
+        <h1 className="font-mono text-xl font-black uppercase tracking-[0.22em] text-white">
+          SELECT UNIVERSE SYNC
         </h1>
-        <p className="mt-2 text-xs font-medium leading-relaxed tracking-wide text-zinc-300">
-          Start with one world. You can switch anytime.
+        <p className="mt-2 font-mono text-xs font-medium leading-relaxed tracking-wide text-zinc-400">
+          Establish baseline synchronization with a single reality vector.
         </p>
       </header>
 
@@ -1699,9 +1718,9 @@ function WorldSelectionScreen({
         type="button"
         onClick={onContinue}
         disabled={selectedWorldId === null}
-        className="world-continue-trigger mt-auto w-full rounded-xl border border-white/20 py-3.5 font-serif-display font-bold tracking-wider text-[#1a1205] transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+        className="mt-auto w-full rounded-none border-b-4 border-amber-800 bg-gradient-to-r from-amber-500 to-yellow-600 py-3.5 text-sm font-black uppercase tracking-widest text-black shadow-[0_0_25px_rgba(234,179,8,0.3)] transition-all hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
       >
-        Continue
+        INITIALIZE PROTOCOL
       </button>
     </div>
   );
